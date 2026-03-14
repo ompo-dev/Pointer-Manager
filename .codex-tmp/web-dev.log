@@ -1,0 +1,10 @@
+   ▲ Next.js 15.5.12
+   - Local:        http://localhost:3002
+   - Network:      http://192.168.100.27:3002
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 6.3s (2540 modules)
+ GET /login 200 in 7164ms

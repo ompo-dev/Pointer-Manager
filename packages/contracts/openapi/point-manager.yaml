@@ -1,0 +1,442 @@
+openapi: 3.0.3
+info:
+  title: Point Manager API
+  version: 1.0.0
+  description: Contrato HTTP inicial da nova plataforma de ponto.
+servers:
+  - url: http://localhost:4000/api/v1
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /auth/login:
+    post:
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+  /auth/me:
+    get:
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticatedUser"
+  /dashboard/overview:
+    get:
+      operationId: getDashboardOverview
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: plantId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardOverview"
+  /plants:
+    get:
+      operationId: listPlants
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Plants list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Plant"
+  /employees:
+    get:
+      operationId: listEmployees
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Employees list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+  /time-entries/live:
+    get:
+      operationId: listLiveTimeEntries
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: plantId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Live entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeEntry"
+  /time-entries/entry:
+    post:
+      operationId: registerEntry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterEntryBody"
+      responses:
+        "200":
+          description: Opened entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeEntry"
+  /time-entries/exit:
+    post:
+      operationId: registerExit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterExitBody"
+      responses:
+        "200":
+          description: Closed entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeEntry"
+  /audit:
+    get:
+      operationId: listAuditLogs
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Audit list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        service:
+          type: string
+      required:
+        - status
+        - service
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthenticatedUser"
+      required:
+        - token
+        - user
+    AuthenticatedUser:
+      type: object
+      properties:
+        id:
+          type: string
+        organizationId:
+          type: string
+        plantId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+      required:
+        - id
+        - organizationId
+        - name
+        - email
+        - role
+    DashboardAlert:
+      type: object
+      properties:
+        id:
+          type: string
+        employeeName:
+          type: string
+        plantName:
+          type: string
+        minutesOpen:
+          type: integer
+      required:
+        - id
+        - employeeName
+        - plantName
+        - minutesOpen
+    DashboardEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        employeeName:
+          type: string
+        plantName:
+          type: string
+        openedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+      required:
+        - id
+        - employeeName
+        - plantName
+        - openedAt
+        - status
+    DashboardOverview:
+      type: object
+      properties:
+        activeEmployees:
+          type: integer
+        openEntries:
+          type: integer
+        recordsToday:
+          type: integer
+        plantsOnline:
+          type: integer
+        overtimeAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardAlert"
+        liveEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardEntry"
+      required:
+        - activeEmployees
+        - openEntries
+        - recordsToday
+        - plantsOnline
+        - overtimeAlerts
+        - liveEntries
+    AuthorizedNetwork:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        ssid:
+          type: string
+          nullable: true
+        bssid:
+          type: string
+          nullable: true
+        ipv4Cidr:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+    Plant:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        timezone:
+          type: string
+        openingHour:
+          type: string
+        closingHour:
+          type: string
+        status:
+          type: string
+        authorizedNetworks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorizedNetwork"
+      required:
+        - id
+        - code
+        - name
+        - city
+        - state
+        - timezone
+        - openingHour
+        - closingHour
+        - status
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+        fullName:
+          type: string
+        cpf:
+          type: string
+        employer:
+          type: string
+        jobTitle:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+      required:
+        - id
+        - fullName
+        - cpf
+        - employer
+        - jobTitle
+        - status
+    TimeEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        openedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+        totalMinutes:
+          type: integer
+          nullable: true
+        status:
+          type: string
+        deviceIp:
+          type: string
+          nullable: true
+        deviceLabel:
+          type: string
+          nullable: true
+      required:
+        - id
+        - openedAt
+        - status
+    RegisterEntryBody:
+      type: object
+      properties:
+        employeeCpf:
+          type: string
+        plantToken:
+          type: string
+        deviceIp:
+          type: string
+        deviceLabel:
+          type: string
+        wifiSsid:
+          type: string
+        wifiBssid:
+          type: string
+        selfieUrl:
+          type: string
+      required:
+        - employeeCpf
+        - plantToken
+    RegisterExitBody:
+      type: object
+      properties:
+        employeeCpf:
+          type: string
+        plantToken:
+          type: string
+        deviceIp:
+          type: string
+      required:
+        - employeeCpf
+        - plantToken
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        entity:
+          type: string
+        entityId:
+          type: string
+          nullable: true
+        ipAddress:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - action
+        - entity
+        - createdAt

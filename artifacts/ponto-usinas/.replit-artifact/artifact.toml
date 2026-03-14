@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Ponto Usinas Solares"
+version = "1.0.0"
+id = "artifacts/ponto-usinas"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 21757
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/ponto-usinas run dev"
+
+[services.env]
+PORT = "21757"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/ponto-usinas", "run", "build"]
+publicDir = "artifacts/ponto-usinas/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

@@ -1,0 +1,2 @@
+$ bun run dist/index.js
+error: script "start" exited with code 58

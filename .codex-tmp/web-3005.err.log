@@ -1,0 +1,4 @@
+$ next dev
+2026-03-13T17:23:15.224Z ERROR [Better Auth]: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+# SERVER_ERROR:  SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+    at JSON.parse (<anonymous>)

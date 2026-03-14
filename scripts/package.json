@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "hello": "tsx ./src/hello.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "hello": "bun run ./src/hello.ts",
+    "openapi": "bun run ./src/generate-openapi.ts",
+    "typecheck": "bunx tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
-    "tsx": "catalog:"
+    "@types/node": "^24.3.1",
+    "tsx": "^4.20.5"
   }
 }

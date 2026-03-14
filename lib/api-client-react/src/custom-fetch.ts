@@ -2,6 +2,18 @@ export type CustomFetchOptions = RequestInit & {
   responseType?: "json" | "text" | "blob" | "auto";
 };
 
+// Token injection: reads from localStorage key set by the app
+function getStoredToken(): string | null {
+  try {
+    const raw = localStorage.getItem("auth-storage");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { state?: { token?: string } };
+    return parsed?.state?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type ErrorType<T = unknown> = ApiError<T>;
 
 export type BodyType<T> = T;
@@ -283,7 +295,10 @@ export async function customFetch<T = unknown>(
     throw new TypeError(`customFetch: ${method} requests cannot have a body.`);
   }
 
-  const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
+  const token = typeof localStorage !== "undefined" ? getStoredToken() : null;
+  const authHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+  const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, authHeaders, headersInit);
 
   if (
     typeof init.body === "string" &&

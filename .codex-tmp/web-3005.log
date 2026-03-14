@@ -1,0 +1,26 @@
+   ▲ Next.js 15.5.12
+   - Local:        http://localhost:3005
+   - Network:      http://192.168.100.27:3005
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 7.5s (2531 modules)
+ GET /login 200 in 9296ms
+ POST /api/auth/sign-in/email 200 in 10554ms
+ POST /api/auth/sign-in/email 500 in 229ms
+ POST /api/auth/sign-in/email 200 in 893ms
+ GET /login 200 in 69ms
+ POST /api/auth/sign-in/email 200 in 876ms
+ GET /api/auth/token 200 in 329ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 2.5s (2835 modules)
+ GET /dashboard 200 in 4099ms
+ POST /api/auth/sign-in/email 200 in 929ms
+ GET /api/auth/token 200 in 311ms
+ POST /api/auth/sign-in/email 200 in 863ms
+ GET /api/auth/token 200 in 324ms
+ POST /api/auth/sign-in/email 200 in 900ms
+ GET /api/auth/token 200 in 315ms
+[?25h

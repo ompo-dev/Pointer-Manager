@@ -1,0 +1,152 @@
+http://localhost:3001 : O termo 'http://localhost:3001' n∆o Ç reconhecido como nome de cmdlet, funá∆o, arquivo de 
+script ou programa oper†vel. Verifique a grafia do nome ou, se um caminho tiver sido inclu°do, veja se o caminho est† 
+correto e tente novamente.
+No linha:1 caractere:38
++ $env:PORT=3001; $env:BETTER_AUTH_URL=http://localhost:3001; $env:NEXT ...
++                                      ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (http://localhost:3001:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+http://localhost:3001 : O termo 'http://localhost:3001' n∆o Ç reconhecido como nome de cmdlet, funá∆o, arquivo de 
+script ou programa oper†vel. Verifique a grafia do nome ou, se um caminho tiver sido inclu°do, veja se o caminho est† 
+correto e tente novamente.
+No linha:1 caractere:86
++ ... ocalhost:3001; $env:NEXT_PUBLIC_APP_URL=http://localhost:3001; $env:N ...
++                                             ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (http://localhost:3001:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+http://localhost:4000 : O termo 'http://localhost:4000' n∆o Ç reconhecido como nome de cmdlet, funá∆o, arquivo de 
+script ou programa oper†vel. Verifique a grafia do nome ou, se um caminho tiver sido inclu°do, veja se o caminho est† 
+correto e tente novamente.
+No linha:1 caractere:134
++ ... ocalhost:3001; $env:NEXT_PUBLIC_API_URL=http://localhost:4000; bun ru ...
++                                             ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (http://localhost:4000:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+$ next start
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3336533177'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3336533177'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3336533177'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js:25:42) {
+  digest: '4281735040'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js:25:42)
+ ‚®Ø TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js:25:42)
+ ‚®Ø TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js:25:42)
+ ‚®Ø [Error: Cannot find module './963.js'
+Require stack:
+- C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js
+- C:\Projects\Teste\Point-Manager\apps\web\.next\server\pages\_document.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\server\require.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\server\load-components.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\build\utils.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\build\swc\options.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\build\swc\index.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\server\config.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\cli\next-test.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\bin\next] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3336533177'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3336533177'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3336533177'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+ ‚®Ø TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js:25:42) {
+  digest: '4281735040'
+}
+ ‚®Ø Error: Could not find the module "C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\next-devtools\userspace\app\segment-explorer-node.js#SegmentViewNode" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+    at stringify (<anonymous>) {
+  digest: '3454902809'
+}
+TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js:25:42)
+ ‚®Ø TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js:25:42)
+ ‚®Ø TypeError: __webpack_modules__[moduleId] is not a function
+    at Object.__webpack_require__ [as require] (C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js:25:42)
+ ‚®Ø [Error: Cannot find module './963.js'
+Require stack:
+- C:\Projects\Teste\Point-Manager\apps\web\.next\server\webpack-runtime.js
+- C:\Projects\Teste\Point-Manager\apps\web\.next\server\pages\_document.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\server\require.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\server\load-components.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\build\utils.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\build\swc\options.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\build\swc\index.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\server\config.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\cli\next-test.js
+- C:\Projects\Teste\Point-Manager\node_modules\.bun\next@15.5.12+dfc90389513bb65c\node_modules\next\dist\bin\next] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}

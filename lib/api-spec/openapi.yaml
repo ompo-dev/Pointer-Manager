@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Sistema de Ponto para Usinas Solares
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: usinas
+    description: Usinas management
+  - name: funcionarios
+    description: Funcionarios management
+  - name: registros
+    description: Registros de ponto
+  - name: dashboard
+    description: Dashboard data
+  - name: relatorios
+    description: Relatorios
+  - name: auditoria
+    description: Audit logs
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,733 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # AUTH
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usuario"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # USINAS
+  /usinas:
+    get:
+      operationId: listUsinas
+      tags: [usinas]
+      summary: List all usinas
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: estado
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of usinas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Usina"
+    post:
+      operationId: createUsina
+      tags: [usinas]
+      summary: Create usina
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUsinaBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usina"
+
+  /usinas/{id}:
+    get:
+      operationId: getUsina
+      tags: [usinas]
+      summary: Get usina by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Usina
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usina"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateUsina
+      tags: [usinas]
+      summary: Update usina
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUsinaBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usina"
+    delete:
+      operationId: deleteUsina
+      tags: [usinas]
+      summary: Delete usina
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /usinas/{id}/qrcode:
+    get:
+      operationId: getUsinaQrcode
+      tags: [usinas]
+      summary: Get QR code for usina
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: QR code data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrcodeResponse"
+
+  /usinas/{id}/funcionarios:
+    get:
+      operationId: getUsinaFuncionarios
+      tags: [usinas]
+      summary: Get funcionarios currently at the usina
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Active funcionarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegistroAtivo"
+
+  # FUNCIONARIOS
+  /funcionarios:
+    get:
+      operationId: listFuncionarios
+      tags: [funcionarios]
+      summary: List all funcionarios
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: usinaId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of funcionarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Funcionario"
+    post:
+      operationId: createFuncionario
+      tags: [funcionarios]
+      summary: Create funcionario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFuncionarioBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Funcionario"
+
+  /funcionarios/{id}:
+    get:
+      operationId: getFuncionario
+      tags: [funcionarios]
+      summary: Get funcionario by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Funcionario
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Funcionario"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateFuncionario
+      tags: [funcionarios]
+      summary: Update funcionario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFuncionarioBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Funcionario"
+    delete:
+      operationId: deleteFuncionario
+      tags: [funcionarios]
+      summary: Delete funcionario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /funcionarios/{id}/historico:
+    get:
+      operationId: getFuncionarioHistorico
+      tags: [funcionarios]
+      summary: Get historico de ponto for funcionario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: dataInicio
+          in: query
+          schema:
+            type: string
+        - name: dataFim
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Historico
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegistroPonto"
+
+  # REGISTROS DE PONTO
+  /registros:
+    get:
+      operationId: listRegistros
+      tags: [registros]
+      summary: List registros de ponto
+      parameters:
+        - name: usinaId
+          in: query
+          schema:
+            type: integer
+        - name: funcionarioId
+          in: query
+          schema:
+            type: integer
+        - name: dataInicio
+          in: query
+          schema:
+            type: string
+        - name: dataFim
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of registros
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListRegistrosResponse"
+
+  /registros/registro-entrada:
+    post:
+      operationId: registrarEntrada
+      tags: [registros]
+      summary: Registrar entrada (QR code scan)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrarEntradaBody"
+      responses:
+        "201":
+          description: Entrada registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistroPonto"
+        "400":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Acesso negado (not on correct WiFi)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /registros/registro-saida:
+    post:
+      operationId: registrarSaida
+      tags: [registros]
+      summary: Registrar saida
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrarSaidaBody"
+      responses:
+        "200":
+          description: Saida registrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistroPonto"
+        "400":
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /registros/ativos:
+    get:
+      operationId: listRegistrosAtivos
+      tags: [registros]
+      summary: List currently active registros
+      parameters:
+        - name: usinaId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Active registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegistroAtivo"
+
+  /registros/{id}:
+    get:
+      operationId: getRegistro
+      tags: [registros]
+      summary: Get registro by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Registro
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistroPonto"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: ajustarRegistro
+      tags: [registros]
+      summary: Ajustar registro de ponto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AjustarRegistroBody"
+      responses:
+        "200":
+          description: Adjusted registro
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistroPonto"
+
+  /registros/{id}/encerrar:
+    post:
+      operationId: encerrarRegistro
+      tags: [registros]
+      summary: Encerrar registro manualmente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Registro encerrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistroPonto"
+
+  # DASHBOARD
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard stats
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+
+  # USUARIOS
+  /usuarios:
+    get:
+      operationId: listUsuarios
+      tags: [auth]
+      summary: List usuarios
+      responses:
+        "200":
+          description: List of usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Usuario"
+    post:
+      operationId: createUsuario
+      tags: [auth]
+      summary: Create usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUsuarioBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usuario"
+
+  /usuarios/{id}:
+    patch:
+      operationId: updateUsuario
+      tags: [auth]
+      summary: Update usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUsuarioBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usuario"
+    delete:
+      operationId: deleteUsuario
+      tags: [auth]
+      summary: Delete usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # AUDITORIA
+  /auditoria:
+    get:
+      operationId: listAuditoria
+      tags: [auditoria]
+      summary: List audit logs
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: acao
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListAuditoriaResponse"
+
+  # RELATORIOS
+  /relatorios/horas-funcionario:
+    get:
+      operationId: relatorioHorasFuncionario
+      tags: [relatorios]
+      summary: Relatorio de horas por funcionario
+      parameters:
+        - name: dataInicio
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: dataFim
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: usinaId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Relatorio data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RelatorioHorasFuncionarioItem"
+
+  /relatorios/horas-usina:
+    get:
+      operationId: relatorioHorasUsina
+      tags: [relatorios]
+      summary: Relatorio de horas por usina
+      parameters:
+        - name: dataInicio
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: dataFim
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Relatorio data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RelatorioHorasUsinaItem"
+
+  /relatorios/presenca:
+    get:
+      operationId: relatorioPresenca
+      tags: [relatorios]
+      summary: Relatorio de presenca e faltas
+      parameters:
+        - name: dataInicio
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: dataFim
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: usinaId
+          in: query
+          schema:
+            type: integer
+        - name: funcionarioId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Relatorio data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RelatorioPresencaItem"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +774,651 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    # AUTH
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/Usuario"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        email:
+          type: string
+        perfil:
+          type: string
+          enum: [super_admin, administrador, supervisor]
+        usinaId:
+          type: ["integer", "null"]
+        ativo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - nome
+        - email
+        - perfil
+        - usinaId
+        - ativo
+        - createdAt
+
+    CreateUsuarioBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        perfil:
+          type: string
+          enum: [super_admin, administrador, supervisor]
+        usinaId:
+          type: ["integer", "null"]
+      required:
+        - nome
+        - email
+        - password
+        - perfil
+
+    UpdateUsuarioBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+        perfil:
+          type: string
+          enum: [super_admin, administrador, supervisor]
+        usinaId:
+          type: ["integer", "null"]
+        ativo:
+          type: boolean
+        password:
+          type: string
+
+    # USINAS
+    Usina:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        cidade:
+          type: string
+        estado:
+          type: string
+        wifiAutorizado:
+          type: string
+        horarioInicio:
+          type: string
+        horarioFim:
+          type: string
+        ativo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        funcionariosAtivos:
+          type: integer
+        totalFuncionarios:
+          type: integer
+      required:
+        - id
+        - nome
+        - cidade
+        - estado
+        - wifiAutorizado
+        - horarioInicio
+        - horarioFim
+        - ativo
+        - createdAt
+        - funcionariosAtivos
+        - totalFuncionarios
+
+    CreateUsinaBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        cidade:
+          type: string
+        estado:
+          type: string
+        wifiAutorizado:
+          type: string
+        horarioInicio:
+          type: string
+        horarioFim:
+          type: string
+      required:
+        - nome
+        - cidade
+        - estado
+        - wifiAutorizado
+        - horarioInicio
+        - horarioFim
+
+    UpdateUsinaBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        cidade:
+          type: string
+        estado:
+          type: string
+        wifiAutorizado:
+          type: string
+        horarioInicio:
+          type: string
+        horarioFim:
+          type: string
+        ativo:
+          type: boolean
+
+    QrcodeResponse:
+      type: object
+      properties:
+        usinaId:
+          type: integer
+        token:
+          type: string
+        url:
+          type: string
+        qrcodeData:
+          type: string
+      required:
+        - usinaId
+        - token
+        - url
+        - qrcodeData
+
+    # FUNCIONARIOS
+    Funcionario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        cpf:
+          type: string
+        empresa:
+          type: string
+        cargo:
+          type: string
+        usinaId:
+          type: ["integer", "null"]
+        usinaNome:
+          type: ["string", "null"]
+        telefone:
+          type: ["string", "null"]
+        fotoUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [ativo, inativo, afastado]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - nome
+        - cpf
+        - empresa
+        - cargo
+        - usinaId
+        - usinaNome
+        - telefone
+        - fotoUrl
+        - status
+        - createdAt
+
+    CreateFuncionarioBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        cpf:
+          type: string
+        empresa:
+          type: string
+        cargo:
+          type: string
+        usinaId:
+          type: ["integer", "null"]
+        telefone:
+          type: ["string", "null"]
+        fotoUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [ativo, inativo, afastado]
+      required:
+        - nome
+        - cpf
+        - empresa
+        - cargo
+        - status
+
+    UpdateFuncionarioBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        cpf:
+          type: string
+        empresa:
+          type: string
+        cargo:
+          type: string
+        usinaId:
+          type: ["integer", "null"]
+        telefone:
+          type: ["string", "null"]
+        fotoUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [ativo, inativo, afastado]
+
+    # REGISTROS
+    RegistroPonto:
+      type: object
+      properties:
+        id:
+          type: integer
+        funcionarioId:
+          type: integer
+        funcionarioNome:
+          type: string
+        funcionarioCpf:
+          type: string
+        usinaId:
+          type: integer
+        usinaNome:
+          type: string
+        dataHoraEntrada:
+          type: string
+          format: date-time
+        dataHoraSaida:
+          type: ["string", "null"]
+          format: date-time
+        totalMinutos:
+          type: ["integer", "null"]
+        ip:
+          type: ["string", "null"]
+        dispositivo:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [aberto, finalizado, ajustado]
+        observacoes:
+          type: ["string", "null"]
+        fotoSelfieUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - funcionarioId
+        - funcionarioNome
+        - funcionarioCpf
+        - usinaId
+        - usinaNome
+        - dataHoraEntrada
+        - dataHoraSaida
+        - totalMinutos
+        - ip
+        - dispositivo
+        - status
+        - observacoes
+        - fotoSelfieUrl
+        - createdAt
+
+    RegistroAtivo:
+      type: object
+      properties:
+        registroId:
+          type: integer
+        funcionarioId:
+          type: integer
+        funcionarioNome:
+          type: string
+        funcionarioCpf:
+          type: string
+        funcionarioCargo:
+          type: string
+        funcionarioFotoUrl:
+          type: ["string", "null"]
+        usinaId:
+          type: integer
+        usinaNome:
+          type: string
+        dataHoraEntrada:
+          type: string
+          format: date-time
+        minutosNoLocal:
+          type: integer
+      required:
+        - registroId
+        - funcionarioId
+        - funcionarioNome
+        - funcionarioCpf
+        - funcionarioCargo
+        - funcionarioFotoUrl
+        - usinaId
+        - usinaNome
+        - dataHoraEntrada
+        - minutosNoLocal
+
+    ListRegistrosResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistroPonto"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    RegistrarEntradaBody:
+      type: object
+      properties:
+        cpf:
+          type: string
+        usinaToken:
+          type: string
+        fotoSelfieUrl:
+          type: ["string", "null"]
+        dispositivo:
+          type: ["string", "null"]
+      required:
+        - cpf
+        - usinaToken
+
+    RegistrarSaidaBody:
+      type: object
+      properties:
+        cpf:
+          type: string
+        usinaToken:
+          type: string
+      required:
+        - cpf
+        - usinaToken
+
+    AjustarRegistroBody:
+      type: object
+      properties:
+        dataHoraEntrada:
+          type: string
+          format: date-time
+        dataHoraSaida:
+          type: ["string", "null"]
+          format: date-time
+        observacoes:
+          type: string
+      required:
+        - observacoes
+
+    # DASHBOARD
+    DashboardData:
+      type: object
+      properties:
+        funcionariosAtivos:
+          type: integer
+        registrosHoje:
+          type: integer
+        semSaida:
+          type: integer
+        totalUsinas:
+          type: integer
+        usinaStats:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsinaStats"
+        alertas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alerta"
+        recenteRegistros:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistroAtivo"
+      required:
+        - funcionariosAtivos
+        - registrosHoje
+        - semSaida
+        - totalUsinas
+        - usinaStats
+        - alertas
+        - recenteRegistros
+
+    UsinaStats:
+      type: object
+      properties:
+        usinaId:
+          type: integer
+        usinaNome:
+          type: string
+        funcionariosAtivos:
+          type: integer
+        horasTrabalhadasHoje:
+          type: number
+        totalRegistrosHoje:
+          type: integer
+      required:
+        - usinaId
+        - usinaNome
+        - funcionariosAtivos
+        - horasTrabalhadasHoje
+        - totalRegistrosHoje
+
+    Alerta:
+      type: object
+      properties:
+        tipo:
+          type: string
+        mensagem:
+          type: string
+        funcionarioNome:
+          type: string
+        usinaNome:
+          type: string
+        registroId:
+          type: integer
+        horasNoLocal:
+          type: number
+      required:
+        - tipo
+        - mensagem
+        - funcionarioNome
+        - usinaNome
+        - registroId
+        - horasNoLocal
+
+    # AUDITORIA
+    AuditoriaLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        acao:
+          type: string
+        entidade:
+          type: string
+        entidadeId:
+          type: ["integer", "null"]
+        usuarioId:
+          type: ["integer", "null"]
+        usuarioNome:
+          type: ["string", "null"]
+        detalhes:
+          type: ["string", "null"]
+        ip:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - acao
+        - entidade
+        - entidadeId
+        - usuarioId
+        - usuarioNome
+        - detalhes
+        - ip
+        - createdAt
+
+    ListAuditoriaResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditoriaLog"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    # RELATORIOS
+    RelatorioHorasFuncionarioItem:
+      type: object
+      properties:
+        funcionarioId:
+          type: integer
+        funcionarioNome:
+          type: string
+        empresa:
+          type: string
+        cargo:
+          type: string
+        usinaNome:
+          type: string
+        totalHoras:
+          type: number
+        totalRegistros:
+          type: integer
+        diasTrabalhados:
+          type: integer
+      required:
+        - funcionarioId
+        - funcionarioNome
+        - empresa
+        - cargo
+        - usinaNome
+        - totalHoras
+        - totalRegistros
+        - diasTrabalhados
+
+    RelatorioHorasUsinaItem:
+      type: object
+      properties:
+        usinaId:
+          type: integer
+        usinaNome:
+          type: string
+        cidade:
+          type: string
+        estado:
+          type: string
+        totalHoras:
+          type: number
+        totalRegistros:
+          type: integer
+        totalFuncionarios:
+          type: integer
+      required:
+        - usinaId
+        - usinaNome
+        - cidade
+        - estado
+        - totalHoras
+        - totalRegistros
+        - totalFuncionarios
+
+    RelatorioPresencaItem:
+      type: object
+      properties:
+        funcionarioId:
+          type: integer
+        funcionarioNome:
+          type: string
+        data:
+          type: string
+        presente:
+          type: boolean
+        horasTrabalhadas:
+          type: number
+        usinaNome:
+          type: string
+      required:
+        - funcionarioId
+        - funcionarioNome
+        - data
+        - presente
+        - horasTrabalhadas
+        - usinaNome

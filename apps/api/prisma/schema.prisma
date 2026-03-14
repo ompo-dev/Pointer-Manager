@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  PLANT_SUPERVISOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PlantStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  LEAVE
+}
+
+enum PersonType {
+  EMPLOYEE
+  CONTRACTOR
+  VISITOR
+  SUPERVISOR
+  SERVICE_PROVIDER
+  OTHER
+}
+
+enum TimeEntryStatus {
+  OPEN
+  CLOSED
+  ADJUSTED
+  AUTO_CLOSED
+}
+
+enum EntryOrigin {
+  QR_CODE
+  PANEL
+  MANUAL_ADJUSTMENT
+  AUTO_CLOSED
+}
+
+model Organization {
+  id             String          @id @default(cuid())
+  code           String          @unique
+  name           String
+  plants         Plant[]
+  users          User[]
+  employees      Employee[]
+  timeEntries    TimeEntry[]
+  auditLogs      AuditLog[]
+  realtimeEvents RealtimeEvent[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Plant {
+  id                   String              @id @default(cuid())
+  organizationId       String
+  organization         Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  code                 String              @unique
+  name                 String
+  city                 String
+  state                String
+  timezone             String              @default("America/Sao_Paulo")
+  openingHour          String
+  closingHour          String
+  qrToken              String              @unique
+  status               PlantStatus         @default(ACTIVE)
+  requireWifiMatch     Boolean             @default(true)
+  requireSelfie        Boolean             @default(false)
+  autoCloseLimitHours  Int                 @default(12)
+  lateAlertMinutes     Int                 @default(540)
+  geofenceLatitude     Float?
+  geofenceLongitude    Float?
+  geofenceRadiusMeters Int?
+  authorizedNetworks   AuthorizedNetwork[]
+  supervisors          User[]
+  employees            Employee[]          @relation("PrimaryPlantEmployees")
+  timeEntries          TimeEntry[]
+  realtimeEvents       RealtimeEvent[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+}
+
+model AuthorizedNetwork {
+  id        String   @id @default(cuid())
+  plantId   String
+  plant     Plant    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  name      String
+  ssid      String?
+  bssid     String?
+  ipv4Cidr  String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plantId         String?
+  plant           Plant?       @relation(fields: [plantId], references: [id])
+  name            String
+  email           String       @unique
+  emailVerified   Boolean      @default(true)
+  image           String?
+  passwordHash    String?
+  role            UserRole
+  status          UserStatus   @default(ACTIVE)
+  modulePermissions Json?
+  lastLoginAt     DateTime?
+  accounts        Account[]
+  sessions        Session[]
+  auditLogs       AuditLog[]   @relation("AuditActor")
+  adjustedEntries TimeEntry[]  @relation("AdjustedByUser")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String   @id
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Jwks {
+  id         String   @id
+  publicKey  String
+  privateKey String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime?
+}
+
+model Employee {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  primaryPlantId String?
+  primaryPlant   Plant?         @relation("PrimaryPlantEmployees", fields: [primaryPlantId], references: [id])
+  fullName       String
+  cpf            String         @unique
+  personType     PersonType     @default(EMPLOYEE)
+  employer       String
+  jobTitle       String
+  email          String?
+  phone          String?
+  photoUrl       String?
+  notes          String?
+  status         EmployeeStatus @default(ACTIVE)
+  timeEntries    TimeEntry[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model TimeEntry {
+  id               String          @id @default(cuid())
+  organizationId   String
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employeeId       String
+  employee         Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  plantId          String
+  plant            Plant           @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  openedAt         DateTime        @default(now())
+  closedAt         DateTime?
+  totalMinutes     Int?
+  status           TimeEntryStatus @default(OPEN)
+  origin           EntryOrigin     @default(QR_CODE)
+  deviceIp         String?
+  deviceLabel      String?
+  wifiSsid         String?
+  wifiBssid        String?
+  selfieUrl        String?
+  geoLatitude      Float?
+  geoLongitude     Float?
+  validationMode   String?
+  validationNotes  String?
+  notes            String?
+  adjustedByUserId String?
+  adjustedByUser   User?           @relation("AdjustedByUser", fields: [adjustedByUserId], references: [id])
+  closedReason     String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([organizationId, plantId, status])
+  @@index([employeeId, status])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actorUserId    String?
+  actorUser      User?        @relation("AuditActor", fields: [actorUserId], references: [id])
+  action         String
+  entity         String
+  entityId       String?
+  metadata       Json?
+  ipAddress      String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([action])
+}
+
+model RealtimeEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plantId        String?
+  plant          Plant?       @relation(fields: [plantId], references: [id])
+  channel        String
+  type           String
+  payload        Json
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, channel, createdAt])
+}
