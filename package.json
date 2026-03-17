@@ -56,7 +56,7 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
-    "next": "^15.5.12",
+    "next": "15.5.13",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
   },
