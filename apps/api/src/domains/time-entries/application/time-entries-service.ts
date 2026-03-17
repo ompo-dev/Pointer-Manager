@@ -471,7 +471,7 @@ export class TimeEntriesService {
       throw new DomainError("Informe um CPF valido para registrar o acesso.", 422);
     }
 
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       const existingPerson = await transaction.person.findUnique({
         where: { cpf: normalizedCpf },
       });

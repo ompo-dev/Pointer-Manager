@@ -292,7 +292,7 @@ export class PeopleService {
   }
 
   async create(input: UpsertPersonInput, actor: AuditActorContext) {
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       const person = await this.resolvePersonForProfile(transaction, {
         cpf: input.cpf,
         fullName: input.fullName,
@@ -367,7 +367,7 @@ export class PeopleService {
       throw new DomainError("Pessoa nao encontrada.", 404);
     }
 
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       const targetPerson =
         input.cpf || input.fullName
           ? await this.resolvePersonForProfile(transaction, {

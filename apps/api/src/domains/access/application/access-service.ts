@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import type { UserRole } from "@api/domains/auth/domain/user-role";
 import { defaultPermissionsByRole } from "@api/domains/auth/domain/user-role";
 import { prisma } from "@api/core/database/prisma-client";
@@ -165,7 +166,7 @@ export class AccessService {
 
     const passwordHash = input.password ? await bcrypt.hash(input.password, 12) : undefined;
 
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       if (passwordHash) {
         await transaction.account.updateMany({
           where: {

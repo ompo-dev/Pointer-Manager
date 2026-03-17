@@ -391,7 +391,7 @@ export class PlantsService {
       throw new DomainError("Usina nao encontrada.", 404);
     }
 
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       if (input.authorizedNetworks) {
         await transaction.authorizedNetwork.deleteMany({
           where: { plantId },
