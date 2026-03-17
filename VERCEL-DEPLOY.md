@@ -3,13 +3,14 @@
 ## Projeto
 
 - Importe o repositorio inteiro na Vercel.
-- Configure o projeto com **Root Directory vazio**.
-- O arquivo [vercel.json](/C:/Projects/Teste/Point-Manager/vercel.json) ja define:
-  - `framework: nextjs`
-  - `installCommand: bun install`
-  - `buildCommand: bun run --cwd apps/web build`
-  - `outputDirectory: apps/web/.next`
+- Configure o projeto para usar **Root Directory = `apps/web`**.
+- Em **Build & Deployment**, use:
+  - `Framework Preset: Next.js`
+  - `Install Command: bun install`
+  - `Build Command: bun run build`
+  - `Output Directory: .next` ou deixe em branco
 
+- O arquivo [vercel.json](/C:/Projects/Teste/Point-Manager/vercel.json) foi reduzido ao minimo para nao conflitar com a configuracao de monorepo no painel da Vercel.
 - O limite da rota SSE esta configurado diretamente no handler com `export const maxDuration = 60`, entao nao e necessario usar `functions` no `vercel.json`.
 
 ## Variaveis obrigatorias
