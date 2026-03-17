@@ -4,10 +4,5 @@
   "installCommand": "bun install",
   "buildCommand": "bun run --cwd apps/web build",
   "devCommand": "bun run --cwd apps/web dev",
-  "outputDirectory": "apps/web/.next",
-  "functions": {
-    "apps/web/app/api/realtime/operations/route.ts": {
-      "maxDuration": 60
-    }
-  }
+  "outputDirectory": "apps/web/.next"
 }

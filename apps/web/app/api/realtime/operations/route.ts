@@ -5,6 +5,7 @@ import { appServices } from "@api/shared/kernel/app-services";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const encoder = new TextEncoder();
 

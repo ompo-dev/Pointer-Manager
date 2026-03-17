@@ -10,6 +10,8 @@
   - `buildCommand: bun run --cwd apps/web build`
   - `outputDirectory: apps/web/.next`
 
+- O limite da rota SSE esta configurado diretamente no handler com `export const maxDuration = 60`, entao nao e necessario usar `functions` no `vercel.json`.
+
 ## Variaveis obrigatorias
 
 Defina no projeto da Vercel:
