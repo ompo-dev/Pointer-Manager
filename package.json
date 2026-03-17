@@ -36,9 +36,9 @@
   "scripts": {
     "dev": "node ./scripts/next-dev.mjs",
     "start": "node ./scripts/next-start.mjs",
-    "build": "node ./node_modules/next/dist/bin/next build",
+    "build": "node ./scripts/next-build.mjs",
     "typecheck": "node ./node_modules/typescript/lib/tsc.js -p tsconfig.typecheck.json --noEmit",
-    "vercel:build": "bunx prisma generate --schema apps/api/prisma/schema.prisma && bun run build",
+    "vercel:build": "bun run build",
     "vercel:dev": "bun run dev",
     "dev:api": "bun --watch apps/api/src/index.ts",
     "build:auth": "bun run --cwd packages/auth build",

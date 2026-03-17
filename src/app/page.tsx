@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 export default function HomePage() {
-  redirect("/dashboard");
+  return <main className="p-6 text-sm text-muted-foreground">Point Manager</main>;
 }

@@ -1,8 +1,3 @@
-import { auth } from "@point-manager/auth/server";
-import { prisma } from "@api/core/database/prisma-client";
-import { defaultPermissionsByRole } from "@api/domains/auth/domain/user-role";
-import { appServices } from "@api/shared/kernel/app-services";
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -36,19 +31,34 @@ function createCommentChunk(comment: string) {
   return encodeSseChunk([`: ${comment}`]);
 }
 
-function normalizeModulePermissions(role: keyof typeof defaultPermissionsByRole, modulePermissions: unknown) {
+function normalizeModulePermissions(
+  permissionsByRole: Record<string, readonly string[]>,
+  role: string,
+  modulePermissions: unknown,
+) {
+  const allowedPermissions = permissionsByRole[role] ?? [];
+
   if (!Array.isArray(modulePermissions)) {
-    return defaultPermissionsByRole[role];
+    return allowedPermissions;
   }
 
-  const normalized = modulePermissions.filter((value): value is (typeof defaultPermissionsByRole)[typeof role][number] =>
-    typeof value === "string" && defaultPermissionsByRole[role].includes(value as never),
+  const normalized = modulePermissions.filter(
+    (value): value is string =>
+      typeof value === "string" && allowedPermissions.includes(value),
   );
 
-  return normalized.length > 0 ? normalized : defaultPermissionsByRole[role];
+  return normalized.length > 0 ? normalized : allowedPermissions;
 }
 
 export async function GET(request: Request) {
+  const [{ auth }, { prisma }, { defaultPermissionsByRole }, { appServices }] =
+    await Promise.all([
+      import("@point-manager/auth/server"),
+      import("@api/core/database/prisma-client"),
+      import("@api/domains/auth/domain/user-role"),
+      import("@api/shared/kernel/app-services"),
+    ]);
+
   const session = await auth.api.getSession({
     headers: new Headers(request.headers),
   });
@@ -92,6 +102,7 @@ export async function GET(request: Request) {
       role: persistedUser.role,
       status: persistedUser.status,
       modulePermissions: normalizeModulePermissions(
+        defaultPermissionsByRole,
         persistedUser.role,
         persistedUser.modulePermissions,
       ),
