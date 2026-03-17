@@ -41,7 +41,7 @@
     "dev": "bunx concurrently -n web,api -c green,blue \"bun run dev:web\" \"bun run dev:api\"",
     "dev:web": "bun run --cwd apps/web dev",
     "dev:api": "bun --watch apps/api/src/index.ts",
-    "vercel:build": "bun run --cwd apps/web build",
+    "vercel:build": "bun run --cwd apps/api prisma:generate && bun run --cwd apps/web build",
     "vercel:dev": "bun run --cwd apps/web dev",
     "build": "bun run build:auth && bun run build:web && bun run build:api && bun run build:client",
     "build:auth": "bun run --cwd packages/auth build",
