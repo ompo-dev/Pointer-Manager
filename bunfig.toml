@@ -2,3 +2,4 @@ telemetry = false
 
 [install]
 saveTextLockfile = true
+linker = "hoisted"

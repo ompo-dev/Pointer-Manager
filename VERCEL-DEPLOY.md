@@ -6,11 +6,12 @@
 - Configure o projeto para usar **Root Directory vazio**.
 - Em **Build & Deployment**, use:
   - `Framework Preset: Next.js`
-  - `Install Command: bun install`
+  - `Install Command: bun install --linker hoisted`
   - `Build Command: bun run vercel:build`
   - `Output Directory: deixe em branco`
 
 - O arquivo [vercel.json](/C:/Projects/Teste/Point-Manager/vercel.json) ja define os comandos corretos para o deploy da raiz do monorepo.
+- O arquivo [bunfig.toml](/C:/Projects/Teste/Point-Manager/bunfig.toml) fixa `linker = "hoisted"` para evitar erros de tracing/deploy com caminhos internos do Bun, como `.bun/@swc+helpers/...`.
 - O limite da rota SSE esta configurado diretamente no handler com `export const maxDuration = 60`, entao nao e necessario usar `functions` no `vercel.json`.
 - O deploy precisa rodar na raiz porque o projeto usa workspaces do Bun e codigo compartilhado em [package.json](/C:/Projects/Teste/Point-Manager/packages/auth/package.json) e [route.ts](/C:/Projects/Teste/Point-Manager/apps/web/app/api/v1/[...path]/route.ts).
 - O script [sync-vercel-next-output.ts](/C:/Projects/Teste/Point-Manager/scripts/src/sync-vercel-next-output.ts) copia `apps/web/.next` para `.next` na raiz ao final da build, para a Vercel encontrar o artefato do Next no monorepo.
