@@ -34,8 +34,8 @@
     }
   },
   "scripts": {
-    "dev": "node ./node_modules/next/dist/bin/next dev",
-    "start": "node ./node_modules/next/dist/bin/next start",
+    "dev": "node ./scripts/next-dev.mjs",
+    "start": "node ./scripts/next-start.mjs",
     "build": "node ./node_modules/next/dist/bin/next build",
     "typecheck": "node ./node_modules/typescript/lib/tsc.js -p tsconfig.typecheck.json --noEmit",
     "vercel:build": "bunx prisma generate --schema apps/api/prisma/schema.prisma && bun run build",

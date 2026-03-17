@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AppProviders } from "@/providers/app-providers";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -21,9 +20,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className="font-sans"
     >
-      <body className={cn("bg-sidebar text-foreground antialiased")}>
-        <AppProviders>{children}</AppProviders>
-      </body>
+      <body className={cn("bg-sidebar text-foreground antialiased")}>{children}</body>
     </html>
   );
 }
