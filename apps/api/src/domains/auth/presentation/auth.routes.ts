@@ -1,12 +1,12 @@
 import { Elysia, t } from "elysia";
-import { appServices } from "@/shared/kernel/app-services";
-import { handleDomainError } from "@/shared/http/handle-domain-error";
-import { readClientIp } from "@/shared/http/read-client-ip";
+import { appServices } from "@api/shared/kernel/app-services";
+import { handleDomainError } from "@api/shared/http/handle-domain-error";
+import { readClientIp } from "@api/shared/http/read-client-ip";
 import {
   authUserSchema,
   commonErrorResponses,
   loginResponseSchema,
-} from "@/shared/http/response-schemas";
+} from "@api/shared/http/response-schemas";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
   .post(

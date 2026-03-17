@@ -1,4 +1,4 @@
-import { prisma } from "@/core/database/prisma-client";
+import { prisma } from "@api/core/database/prisma-client";
 
 function calculateElapsedMinutes(openedAt: Date) {
   return Math.max(0, Math.round((Date.now() - openedAt.getTime()) / 60000));

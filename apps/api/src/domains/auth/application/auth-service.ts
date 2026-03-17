@@ -1,14 +1,14 @@
 import { auth } from "@point-manager/auth/server";
 import { createLocalJWKSet, jwtVerify, type JSONWebKeySet } from "jose";
-import { env } from "@/core/config/env";
-import { prisma } from "@/core/database/prisma-client";
+import { env } from "@api/core/config/env";
+import { prisma } from "@api/core/database/prisma-client";
 import {
   AppModules,
   defaultPermissionsByRole,
   type AppModule,
   type UserRole,
-} from "@/domains/auth/domain/user-role";
-import { DomainError } from "@/shared/kernel/domain-error";
+} from "@api/domains/auth/domain/user-role";
+import { DomainError } from "@api/shared/kernel/domain-error";
 
 export interface AuthenticatedUser {
   id: string;
@@ -138,7 +138,7 @@ export class AuthService {
     if (!signInResponse.ok || !signInPayload?.user) {
       const status = signInResponse.status || 401;
       throw new DomainError(
-        status === 401 ? "Credenciais inválidas." : signInPayload?.message ?? "Falha ao autenticar.",
+        status === 401 ? "Credenciais invÃ¡lidas." : signInPayload?.message ?? "Falha ao autenticar.",
         status,
       );
     }
@@ -179,7 +179,7 @@ export class AuthService {
 
   async requireUser(authorizationHeader?: string) {
     if (!authorizationHeader?.startsWith("Bearer ")) {
-      throw new DomainError("Token não informado.", 401);
+      throw new DomainError("Token nÃ£o informado.", 401);
     }
 
     const token = authorizationHeader.slice("Bearer ".length);

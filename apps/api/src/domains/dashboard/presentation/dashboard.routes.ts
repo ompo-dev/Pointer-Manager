@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
-import { appServices } from "@/shared/kernel/app-services";
-import { handleDomainError } from "@/shared/http/handle-domain-error";
-import { commonErrorResponses, dashboardOverviewSchema } from "@/shared/http/response-schemas";
+import { appServices } from "@api/shared/kernel/app-services";
+import { handleDomainError } from "@api/shared/http/handle-domain-error";
+import { commonErrorResponses, dashboardOverviewSchema } from "@api/shared/http/response-schemas";
 
 export const dashboardRoutes = new Elysia({ prefix: "/dashboard" }).get(
   "/overview",

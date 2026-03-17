@@ -1,21 +1,21 @@
 import { PersonType, Prisma, type EntryOrigin, type TimeEntryStatus } from "@prisma/client";
-import { prisma } from "@/core/database/prisma-client";
-import { OperationsHub } from "@/core/realtime/operations-hub";
-import { AuditService } from "@/domains/audit/application/audit-service";
-import type { AuthenticatedUser } from "@/domains/auth/application/auth-service";
-import { detectPlantNetwork } from "@/domains/plants/domain/network-detection";
+import { prisma } from "@api/core/database/prisma-client";
+import { OperationsHub } from "@api/core/realtime/operations-hub";
+import { AuditService } from "@api/domains/audit/application/audit-service";
+import type { AuthenticatedUser } from "@api/domains/auth/application/auth-service";
+import { detectPlantNetwork } from "@api/domains/plants/domain/network-detection";
 import {
   getAccessSubjectPolicy,
   listAccessSubjectPolicies,
   normalizeCpf,
   normalizeOptionalText,
-} from "@/domains/time-entries/domain/access-subject-policy";
+} from "@api/domains/time-entries/domain/access-subject-policy";
 import {
   evaluatePlantLocationAccess,
   evaluatePlantNetworkAccess,
   validatePlantAccess,
-} from "@/domains/time-entries/domain/access-validation";
-import { DomainError } from "@/shared/kernel/domain-error";
+} from "@api/domains/time-entries/domain/access-validation";
+import { DomainError } from "@api/shared/kernel/domain-error";
 
 interface ListEntriesFilters {
   organizationId: string;

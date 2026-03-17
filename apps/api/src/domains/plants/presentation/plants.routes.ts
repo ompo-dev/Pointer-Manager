@@ -1,15 +1,15 @@
 import { Elysia, t } from "elysia";
 import { PlantStatus } from "@prisma/client";
-import { appServices } from "@/shared/kernel/app-services";
-import { DomainError } from "@/shared/kernel/domain-error";
-import { handleDomainError } from "@/shared/http/handle-domain-error";
+import { appServices } from "@api/shared/kernel/app-services";
+import { DomainError } from "@api/shared/kernel/domain-error";
+import { handleDomainError } from "@api/shared/http/handle-domain-error";
 import {
   commonErrorResponses,
   detectedPlantNetworkSchema,
   plantDetailSchema,
   plantSchema,
-} from "@/shared/http/response-schemas";
-import { readClientIp } from "@/shared/http/read-client-ip";
+} from "@api/shared/http/response-schemas";
+import { readClientIp } from "@api/shared/http/read-client-ip";
 
 function parseDate(value: unknown) {
   return typeof value === "string" && value ? new Date(value) : undefined;

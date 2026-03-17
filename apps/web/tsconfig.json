@@ -19,6 +19,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@api/*": [
+        "../api/src/*"
       ]
     },
     "strict": false,

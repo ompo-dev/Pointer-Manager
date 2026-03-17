@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
-import { appServices } from "@/shared/kernel/app-services";
-import { handleDomainError } from "@/shared/http/handle-domain-error";
-import { commonErrorResponses, reportsSummarySchema } from "@/shared/http/response-schemas";
+import { appServices } from "@api/shared/kernel/app-services";
+import { handleDomainError } from "@api/shared/http/handle-domain-error";
+import { commonErrorResponses, reportsSummarySchema } from "@api/shared/http/response-schemas";
 
 function parseDate(value: unknown) {
   return typeof value === "string" && value ? new Date(value) : undefined;

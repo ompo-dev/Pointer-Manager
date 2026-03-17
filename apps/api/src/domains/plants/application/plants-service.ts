@@ -1,12 +1,12 @@
 import { PlantStatus, Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
-import { prisma } from "@/core/database/prisma-client";
-import { AuditService } from "@/domains/audit/application/audit-service";
+import { prisma } from "@api/core/database/prisma-client";
+import { AuditService } from "@api/domains/audit/application/audit-service";
 import {
   detectPlantNetwork,
   type DetectPlantNetworkInput,
-} from "@/domains/plants/domain/network-detection";
-import { DomainError } from "@/shared/kernel/domain-error";
+} from "@api/domains/plants/domain/network-detection";
+import { DomainError } from "@api/shared/kernel/domain-error";
 
 interface ListPlantsFilters {
   search?: string;

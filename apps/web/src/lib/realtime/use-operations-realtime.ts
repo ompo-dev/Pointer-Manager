@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
-import { resolveSocketOrigin } from "@/lib/network/runtime-url";
 import type { LiveFeedStatus, LiveOperationsEvent } from "@/lib/realtime/operations-types";
-
-const socketUrl = resolveSocketOrigin();
 
 interface UseOperationsRealtimeOptions {
   plantId?: string;
@@ -47,21 +43,38 @@ export function useOperationsRealtime({
 
     updateStatus("connecting");
 
-    const socket = io(socketUrl, {
-      transports: ["websocket"],
-      forceNew: true,
-      query: normalizedPlantId ? { plantId: normalizedPlantId } : undefined,
+    const url = new URL("/api/realtime/operations", window.location.origin);
+    if (normalizedPlantId) {
+      url.searchParams.set("plantId", normalizedPlantId);
+    }
+
+    const eventSource = new EventSource(url.toString(), {
+      withCredentials: true,
     });
 
-    socket.on("connect", () => updateStatus("connected"));
-    socket.on("disconnect", () => updateStatus("offline"));
-    socket.on("connect_error", () => updateStatus("offline"));
-    socket.on("operations:event", (event: LiveOperationsEvent) => {
-      onEventRef.current?.(event);
+    eventSource.onopen = () => {
+      updateStatus("connected");
+    };
+
+    eventSource.onerror = () => {
+      updateStatus("offline");
+    };
+
+    eventSource.addEventListener("operations", (event) => {
+      if (!(event instanceof MessageEvent) || typeof event.data !== "string") {
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(event.data) as LiveOperationsEvent;
+        onEventRef.current?.(payload);
+      } catch (error) {
+        console.error(error);
+      }
     });
 
     return () => {
-      socket.disconnect();
+      eventSource.close();
       updateStatus("offline");
     };
   }, [enabled, normalizedPlantId]);

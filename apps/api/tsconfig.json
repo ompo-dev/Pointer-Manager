@@ -6,7 +6,7 @@
     "noEmit": true,
     "types": ["node", "bun-types"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@api/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts", "tests/**/*.ts"],

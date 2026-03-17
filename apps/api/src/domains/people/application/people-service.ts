@@ -1,9 +1,9 @@
 import { PersonType, Prisma, type AccessProfileStatus } from "@prisma/client";
-import { prisma } from "@/core/database/prisma-client";
-import { AuditService } from "@/domains/audit/application/audit-service";
-import { normalizeCpf } from "@/domains/time-entries/domain/access-subject-policy";
-import { toCsv } from "@/shared/kernel/csv";
-import { DomainError } from "@/shared/kernel/domain-error";
+import { prisma } from "@api/core/database/prisma-client";
+import { AuditService } from "@api/domains/audit/application/audit-service";
+import { normalizeCpf } from "@api/domains/time-entries/domain/access-subject-policy";
+import { toCsv } from "@api/shared/kernel/csv";
+import { DomainError } from "@api/shared/kernel/domain-error";
 
 interface ListPeopleFilters {
   search?: string;

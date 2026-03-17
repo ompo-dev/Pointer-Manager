@@ -23,6 +23,9 @@ const nextConfig = {
   transpilePackages: ["@point-manager/auth"],
   distDir: isDev ? `.next-dev-${port}` : ".next",
   allowedDevOrigins: getAllowedDevOrigins(),
+  experimental: {
+    externalDir: true,
+  },
 };
 
 export default nextConfig;

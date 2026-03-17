@@ -1,11 +1,11 @@
 import { Elysia, t } from "elysia";
 import { UserStatus } from "@prisma/client";
-import { AppModules, UserRoles, type AppModule, type UserRole } from "@/domains/auth/domain/user-role";
-import { appServices } from "@/shared/kernel/app-services";
-import { DomainError } from "@/shared/kernel/domain-error";
-import { handleDomainError } from "@/shared/http/handle-domain-error";
-import { readClientIp } from "@/shared/http/read-client-ip";
-import { accessUserSchema, commonErrorResponses } from "@/shared/http/response-schemas";
+import { AppModules, UserRoles, type AppModule, type UserRole } from "@api/domains/auth/domain/user-role";
+import { appServices } from "@api/shared/kernel/app-services";
+import { DomainError } from "@api/shared/kernel/domain-error";
+import { handleDomainError } from "@api/shared/http/handle-domain-error";
+import { readClientIp } from "@api/shared/http/read-client-ip";
+import { accessUserSchema, commonErrorResponses } from "@api/shared/http/response-schemas";
 
 function parseUserRole(value: string): UserRole {
   if (Object.values(UserRoles).includes(value as UserRole)) {

@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { prisma } from "@/core/database/prisma-client";
-import { toCsv } from "@/shared/kernel/csv";
+import { prisma } from "@api/core/database/prisma-client";
+import { toCsv } from "@api/shared/kernel/csv";
 
 interface ReportFilters {
   organizationId: string;

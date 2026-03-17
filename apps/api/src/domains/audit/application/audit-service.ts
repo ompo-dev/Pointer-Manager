@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/core/database/prisma-client";
+import { prisma } from "@api/core/database/prisma-client";
 
 function serializeAuditLog(
   log: {

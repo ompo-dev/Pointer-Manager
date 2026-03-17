@@ -1,10 +1,10 @@
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
-import type { UserRole } from "@/domains/auth/domain/user-role";
-import { defaultPermissionsByRole } from "@/domains/auth/domain/user-role";
-import { prisma } from "@/core/database/prisma-client";
-import { AuditService } from "@/domains/audit/application/audit-service";
-import { DomainError } from "@/shared/kernel/domain-error";
+import type { UserRole } from "@api/domains/auth/domain/user-role";
+import { defaultPermissionsByRole } from "@api/domains/auth/domain/user-role";
+import { prisma } from "@api/core/database/prisma-client";
+import { AuditService } from "@api/domains/audit/application/audit-service";
+import { DomainError } from "@api/shared/kernel/domain-error";
 
 interface CreateUserInput {
   organizationId: string;
