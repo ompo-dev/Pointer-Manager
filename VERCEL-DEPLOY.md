@@ -4,14 +4,15 @@
 
 - Importe o repositorio inteiro na Vercel.
 - Configure o projeto para usar **Root Directory = `apps/web`**.
+- Ative **Include files outside the root directory in the Build Step**.
 - Em **Build & Deployment**, use:
   - `Framework Preset: Next.js`
-  - `Install Command: bun install`
-  - `Build Command: bun run build`
+  - `Install Command: cd ../.. && bun install`
+  - `Build Command: cd ../.. && bun run --cwd apps/web build`
   - `Output Directory: .next` ou deixe em branco
 
-- O arquivo [vercel.json](/C:/Projects/Teste/Point-Manager/vercel.json) foi reduzido ao minimo para nao conflitar com a configuracao de monorepo no painel da Vercel.
 - O limite da rota SSE esta configurado diretamente no handler com `export const maxDuration = 60`, entao nao e necessario usar `functions` no `vercel.json`.
+- O projeto depende de codigo compartilhado fora de `apps/web`, principalmente [package.json](/C:/Projects/Teste/Point-Manager/packages/auth/package.json) e a API reaproveitada em [route.ts](/C:/Projects/Teste/Point-Manager/apps/web/app/api/v1/[...path]/route.ts), entao a opcao de incluir arquivos fora do root e obrigatoria neste deploy.
 
 ## Variaveis obrigatorias
 
