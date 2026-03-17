@@ -4,6 +4,9 @@
 @tailwind utilities;
 
 :root {
+  --font-sans: "Segoe UI";
+  --font-body: "Segoe UI";
+  --font-mono: "Consolas";
   --pm-canvas: 42 23% 96%;
   --pm-ink: 222 47% 11%;
   --pm-muted: 215 18% 34%;

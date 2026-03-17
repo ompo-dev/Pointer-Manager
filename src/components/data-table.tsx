@@ -592,7 +592,7 @@ export function DataTable<TData extends object, TValue = unknown>({
     if (enableRowDrag) {
       nextColumns.unshift({
         id: "drag",
-        header: () => null,
+        header: "",
         cell: ({ row }) => <DragHandle id={row.id} />,
         enableSorting: false,
         enableHiding: false,

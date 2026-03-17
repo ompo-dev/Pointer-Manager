@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "bun install --linker hoisted",
-  "buildCommand": "bun run vercel:build",
-  "devCommand": "bun run vercel:dev",
-  "outputDirectory": "apps/web/.next"
+  "buildCommand": "bun run build",
+  "devCommand": "bun run dev",
+  "outputDirectory": ".next"
 }
