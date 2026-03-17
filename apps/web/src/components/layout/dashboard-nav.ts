@@ -8,15 +8,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-
-type AppModule =
-  | "dashboard"
-  | "plants"
-  | "people"
-  | "time-entries"
-  | "reports"
-  | "access"
-  | "audit";
+import { resolveAllowedModules, type AppModule } from "@/lib/permissions";
 
 type NavSectionDefinition = {
   title: string;
@@ -26,12 +18,6 @@ type NavSectionDefinition = {
     url: Route;
     module: AppModule;
   }>;
-};
-
-const defaultPermissionsByRole: Record<string, AppModule[]> = {
-  SUPER_ADMIN: ["dashboard", "plants", "people", "time-entries", "reports", "access", "audit"],
-  ADMIN: ["dashboard", "plants", "people", "time-entries", "reports", "audit"],
-  PLANT_SUPERVISOR: ["dashboard", "plants", "people", "time-entries", "reports"],
 };
 
 const navDefinitions: NavSectionDefinition[] = [
@@ -81,14 +67,6 @@ const quickLinkDefinitions = [
     module: "people" as AppModule,
   },
 ];
-
-export function resolveAllowedModules(user?: { role?: string | null; modulePermissions?: string[] | null } | null) {
-  if (user?.modulePermissions?.length) {
-    return user.modulePermissions as AppModule[];
-  }
-
-  return defaultPermissionsByRole[user?.role ?? "ADMIN"] ?? defaultPermissionsByRole.ADMIN;
-}
 
 export function getDashboardNavSections(user?: { role?: string | null; modulePermissions?: string[] | null } | null) {
   const allowedModules = new Set(resolveAllowedModules(user));

@@ -1,6 +1,7 @@
 import { httpClient } from "./http-client";
 import { downloadAuthenticatedFile } from "./file-download";
 import { fetchWithQueryCache, normalizeQueryParams } from "./query-cache";
+import { resolveApiOrigin } from "@/lib/network/runtime-url";
 
 export interface ReportsSummary {
   hoursByPerson: Array<{
@@ -61,7 +62,7 @@ export function buildReportExportUrl(params?: {
   if (params?.plantId) searchParams.set("plantId", params.plantId);
   if (params?.from) searchParams.set("from", params.from);
   if (params?.to) searchParams.set("to", params.to);
-  const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:4000";
+  const base = resolveApiOrigin();
   return `${base}/api/v1/reports/export?${searchParams.toString()}`;
 }
 

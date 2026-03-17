@@ -2,7 +2,7 @@
 
 import { startTransition, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { resolveAllowedModules } from "@/components/layout/dashboard-nav";
+import { resolveAllowedModules } from "@/lib/permissions";
 import { useAccessStore } from "@/store/access-store";
 import { useAuditStore } from "@/store/audit-store";
 import { useDashboardStore } from "@/store/dashboard-store";

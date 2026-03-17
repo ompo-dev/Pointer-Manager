@@ -2,39 +2,38 @@
 
 import type { AccessIntakeContext } from "@/lib/api/time-entries";
 
-export type ResolvedAccessMode = "ENTRY" | "EXIT" | "BLOCKED";
-
-function normalizeLabel(value?: string | null) {
-  return value?.trim().toLowerCase() ?? "";
+export interface AccessModeInput {
+  plant: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
 }
 
-export function resolveAccessMode(intake: Pick<
-  AccessIntakeContext,
-  "suggestedMode" | "blockedReason" | "openEntry"
->, currentPlant?: { id?: string | null; name?: string | null } | null): ResolvedAccessMode {
-  if (intake.blockedReason) {
+export type ResolvedAccessMode = "ENTRY" | "EXIT" | "BLOCKED";
+
+export function resolveAccessMode(
+  intake: AccessIntakeContext,
+  currentPlant?: AccessModeInput["plant"],
+): ResolvedAccessMode {
+  if (intake.suggestedMode === "BLOCKED" || intake.blockedReason) {
     return "BLOCKED";
   }
 
-  const currentPlantId = currentPlant?.id ?? null;
-  const currentPlantName = currentPlant?.name ?? null;
-  const isSamePlant =
-    intake.openEntry?.samePlant ||
-    (Boolean(currentPlantId) && intake.openEntry?.plantId === currentPlantId) ||
-    (Boolean(currentPlantName) &&
-      normalizeLabel(intake.openEntry?.plantName) === normalizeLabel(currentPlantName));
+  if (!intake.openEntry) {
+    return "ENTRY";
+  }
 
-  if (intake.suggestedMode === "EXIT" || isSamePlant) {
+  if (intake.openEntry.samePlant) {
     return "EXIT";
   }
 
-  if (intake.openEntry) {
-    return "BLOCKED";
+  if (
+    currentPlant?.id &&
+    intake.openEntry.plantId &&
+    currentPlant.id === intake.openEntry.plantId
+  ) {
+    return "EXIT";
   }
 
-  if (intake.suggestedMode === "BLOCKED") {
-    return "BLOCKED";
-  }
-
-  return "ENTRY";
+  return intake.suggestedMode === "EXIT" ? "EXIT" : "BLOCKED";
 }

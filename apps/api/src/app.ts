@@ -2,6 +2,7 @@ import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 import { env } from "./core/config/env";
+import { expandLocalOrigins } from "./core/network/local-network";
 import { appServices } from "./shared/kernel/app-services";
 import { authRoutes } from "./domains/auth/presentation/auth.routes";
 import { accessRoutes } from "./domains/access/presentation/access.routes";
@@ -12,6 +13,9 @@ import { timeEntriesRoutes } from "./domains/time-entries/presentation/time-entr
 import { dashboardRoutes } from "./domains/dashboard/presentation/dashboard.routes";
 import { auditRoutes } from "./domains/audit/presentation/audit.routes";
 import { healthResponseSchema } from "./shared/http/response-schemas";
+
+const allowedCorsOrigins =
+  env.NODE_ENV === "development" ? true : expandLocalOrigins(env.CORS_ORIGIN);
 
 const api = new Elysia({ prefix: "/api/v1" })
   .decorate("services", appServices)
@@ -40,7 +44,7 @@ export const app = new Elysia()
   .decorate("services", appServices)
   .use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: allowedCorsOrigins,
       credentials: true,
       allowedHeaders: ["Content-Type", "Authorization"],
       methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],

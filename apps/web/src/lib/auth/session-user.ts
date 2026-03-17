@@ -1,21 +1,19 @@
+import type { AuthenticatedUser } from "@/lib/api/auth";
 import type { SessionUser } from "@/store/session-store";
 
-export function toSessionUser(user: {
-  id: string;
-  name: string;
-  email: string;
-  role?: string | null;
+type SessionLikeUser = Omit<AuthenticatedUser, "plantId" | "modulePermissions"> & {
   plantId?: string | null;
-  status?: string | null;
   modulePermissions?: string[] | null;
-}): SessionUser {
+};
+
+export function toSessionUser(user: SessionLikeUser): SessionUser {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role ?? "ADMIN",
+    role: user.role,
     plantId: user.plantId ?? null,
-    status: user.status ?? "ACTIVE",
+    status: user.status,
     modulePermissions: user.modulePermissions ?? [],
   };
 }

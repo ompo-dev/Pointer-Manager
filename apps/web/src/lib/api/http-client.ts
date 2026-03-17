@@ -2,10 +2,10 @@ import axios from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 import { authClient } from "@/lib/auth/client";
 import { forceLocalLogout } from "@/lib/auth/logout";
+import { resolveApiOrigin } from "@/lib/network/runtime-url";
 import { useSessionStore } from "@/store/session-store";
 
-const apiBaseUrl =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:4000";
+const apiBaseUrl = resolveApiOrigin();
 
 export const httpClient = axios.create({
   baseURL: `${apiBaseUrl}/api/v1`,

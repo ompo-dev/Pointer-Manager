@@ -8,17 +8,6 @@ export interface AccessSubjectFieldDefinition {
   placeholder: string;
 }
 
-export interface AccessSubjectPolicyDefinition {
-  personType: string;
-  label: string;
-  description: string;
-  requiredFields: AccessSubjectFieldDefinition[];
-  defaults: {
-    employer: string;
-    jobTitle: string;
-  };
-}
-
 export interface AccessSubjectFormFields {
   personType: string;
   fullName: string;
@@ -26,27 +15,23 @@ export interface AccessSubjectFormFields {
   jobTitle: string;
 }
 
+export interface AccessSubjectPolicyDefinition {
+  personType: string;
+  label: string;
+  description: string;
+  requiredFields: AccessSubjectFieldDefinition[];
+  defaults: Omit<AccessSubjectFormFields, "fullName" | "personType">;
+}
+
 const accessSubjectPolicies: AccessSubjectPolicyDefinition[] = [
   {
     personType: "EMPLOYEE",
     label: "Funcionario(a)",
-    description: "Cadastro operacional da propria usina ou equipe interna.",
+    description: "Pessoa do quadro interno da operacao da usina.",
     requiredFields: [
-      {
-        name: "fullName",
-        label: "Nome completo",
-        placeholder: "Nome e sobrenome",
-      },
-      {
-        name: "employer",
-        label: "Empresa",
-        placeholder: "Empresa contratante",
-      },
-      {
-        name: "jobTitle",
-        label: "Cargo",
-        placeholder: "Funcao ou cargo",
-      },
+      { name: "fullName", label: "Nome completo", placeholder: "Nome completo" },
+      { name: "employer", label: "Empresa", placeholder: "Empresa contratante" },
+      { name: "jobTitle", label: "Cargo", placeholder: "Cargo ou funcao" },
     ],
     defaults: {
       employer: "Operacao interna",
@@ -56,44 +41,24 @@ const accessSubjectPolicies: AccessSubjectPolicyDefinition[] = [
   {
     personType: "CONTRACTOR",
     label: "Terceirizado(a)",
-    description: "Profissional alocado por empresa terceira.",
+    description: "Profissional terceirizado ou equipe contratada para executar servicos.",
     requiredFields: [
-      {
-        name: "fullName",
-        label: "Nome completo",
-        placeholder: "Nome e sobrenome",
-      },
-      {
-        name: "employer",
-        label: "Empresa terceirizada",
-        placeholder: "Empresa responsavel",
-      },
-      {
-        name: "jobTitle",
-        label: "Funcao",
-        placeholder: "Funcao executada na usina",
-      },
+      { name: "fullName", label: "Nome completo", placeholder: "Nome completo" },
+      { name: "employer", label: "Empresa terceirizada", placeholder: "Empresa terceirizada" },
+      { name: "jobTitle", label: "Servico ou funcao", placeholder: "Servico ou funcao" },
     ],
     defaults: {
-      employer: "Terceirizada",
-      jobTitle: "Terceirizado(a)",
+      employer: "Empresa terceirizada",
+      jobTitle: "Servico terceirizado",
     },
   },
   {
     personType: "VISITOR",
     label: "Visitante",
-    description: "Acesso eventual com foco em identificacao e motivo da visita.",
+    description: "Visitante eventual, reuniao, entrega, vistoria ou visita tecnica.",
     requiredFields: [
-      {
-        name: "fullName",
-        label: "Nome completo",
-        placeholder: "Nome e sobrenome",
-      },
-      {
-        name: "jobTitle",
-        label: "Motivo da visita",
-        placeholder: "Ex.: reuniao, inspecao, entrega",
-      },
+      { name: "fullName", label: "Nome completo", placeholder: "Nome completo" },
+      { name: "jobTitle", label: "Motivo da visita", placeholder: "Motivo da visita" },
     ],
     defaults: {
       employer: "Visitante",
@@ -103,13 +68,11 @@ const accessSubjectPolicies: AccessSubjectPolicyDefinition[] = [
   {
     personType: "SUPERVISOR",
     label: "Supervisor(a)",
-    description: "Lider operacional com acesso recorrente.",
+    description: "Responsavel pela operacao, seguranca ou acompanhamento local.",
     requiredFields: [
-      {
-        name: "fullName",
-        label: "Nome completo",
-        placeholder: "Nome e sobrenome",
-      },
+      { name: "fullName", label: "Nome completo", placeholder: "Nome completo" },
+      { name: "employer", label: "Area ou empresa", placeholder: "Area ou empresa" },
+      { name: "jobTitle", label: "Funcao", placeholder: "Funcao" },
     ],
     defaults: {
       employer: "Supervisao",
@@ -118,75 +81,46 @@ const accessSubjectPolicies: AccessSubjectPolicyDefinition[] = [
   },
   {
     personType: "SERVICE_PROVIDER",
-    label: "Prestador(a) de servico",
-    description: "Servico eventual ou especializado executado por fornecedor.",
+    label: "Prestador(a)",
+    description: "Prestador de servicos pontuais, manutencao, inspeção ou apoio especializado.",
     requiredFields: [
-      {
-        name: "fullName",
-        label: "Nome completo",
-        placeholder: "Nome e sobrenome",
-      },
-      {
-        name: "employer",
-        label: "Empresa prestadora",
-        placeholder: "Fornecedor responsavel",
-      },
-      {
-        name: "jobTitle",
-        label: "Servico",
-        placeholder: "Servico ou atividade executada",
-      },
+      { name: "fullName", label: "Nome completo", placeholder: "Nome completo" },
+      { name: "employer", label: "Empresa prestadora", placeholder: "Empresa prestadora" },
+      { name: "jobTitle", label: "Servico prestado", placeholder: "Servico prestado" },
     ],
     defaults: {
-      employer: "Prestador(a) de servico",
-      jobTitle: "Servico programado",
+      employer: "Prestador de servico",
+      jobTitle: "Servico prestado",
     },
   },
   {
     personType: "OTHER",
-    label: "Outro acesso",
-    description: "Acesso eventual fora das categorias padrao.",
+    label: "Outro",
+    description: "Qualquer outro perfil de acesso que nao se encaixe nas categorias padrao.",
     requiredFields: [
-      {
-        name: "fullName",
-        label: "Nome completo",
-        placeholder: "Nome e sobrenome",
-      },
-      {
-        name: "jobTitle",
-        label: "Motivo do acesso",
-        placeholder: "Descreva rapidamente o motivo",
-      },
+      { name: "fullName", label: "Nome completo", placeholder: "Nome completo" },
+      { name: "employer", label: "Empresa ou origem", placeholder: "Empresa ou origem" },
+      { name: "jobTitle", label: "Detalhe do acesso", placeholder: "Detalhe do acesso" },
     ],
     defaults: {
-      employer: "Acesso eventual",
-      jobTitle: "Acesso autorizado",
+      employer: "Nao informado",
+      jobTitle: "Acesso eventual",
     },
   },
 ];
 
-function normalizeValue(value?: string | null) {
+function normalizeText(value?: string | null) {
   return value?.trim() ?? "";
 }
 
-function hasRequiredField(
-  policy: AccessSubjectPolicyDefinition,
-  fieldName: Exclude<AccessSubjectFieldName, "fullName">,
-) {
-  return policy.requiredFields.some((field) => field.name === fieldName);
-}
-
 export function listAccessSubjectPolicies() {
-  return accessSubjectPolicies.map((policy) => ({
-    ...policy,
-    requiredFields: [...policy.requiredFields],
-  }));
+  return accessSubjectPolicies;
 }
 
 export function getAccessSubjectPolicy(personType?: string | null) {
   return (
     accessSubjectPolicies.find((policy) => policy.personType === personType) ??
-    accessSubjectPolicies.find((policy) => policy.personType === "VISITOR")!
+    accessSubjectPolicies.find((policy) => policy.personType === "OTHER")!
   );
 }
 
@@ -198,53 +132,23 @@ export function seedAccessSubjectForm(
 
   return {
     personType: policy.personType,
-    fullName: normalizeValue(reference?.fullName),
-    employer:
-      normalizeValue(reference?.employer) ||
-      (hasRequiredField(policy, "employer") ? "" : policy.defaults.employer),
-    jobTitle:
-      normalizeValue(reference?.jobTitle) ||
-      (hasRequiredField(policy, "jobTitle") ? "" : policy.defaults.jobTitle),
+    fullName: normalizeText(reference?.fullName),
+    employer: normalizeText(reference?.employer) || policy.defaults.employer,
+    jobTitle: normalizeText(reference?.jobTitle) || policy.defaults.jobTitle,
   };
 }
 
 export function adaptAccessSubjectForm(
-  nextPersonType: string,
-  current: AccessSubjectFormFields,
+  personType: string,
+  current?: Partial<AccessSubjectFormFields> | null,
   reference?: Partial<AccessSubjectFormFields> | null,
 ): AccessSubjectFormFields {
-  const previousPolicy = getAccessSubjectPolicy(current.personType);
-  const nextPolicy = getAccessSubjectPolicy(nextPersonType);
-  const currentEmployer = normalizeValue(current.employer);
-  const currentJobTitle = normalizeValue(current.jobTitle);
-  const referenceEmployer = normalizeValue(reference?.employer);
-  const referenceJobTitle = normalizeValue(reference?.jobTitle);
-
-  const shouldResetEmployer =
-    !currentEmployer ||
-    currentEmployer === previousPolicy.defaults.employer ||
-    (referenceEmployer !== "" && currentEmployer === referenceEmployer);
-  const shouldResetJobTitle =
-    !currentJobTitle ||
-    currentJobTitle === previousPolicy.defaults.jobTitle ||
-    (referenceJobTitle !== "" && currentJobTitle === referenceJobTitle);
+  const seeded = seedAccessSubjectForm(personType, reference);
 
   return {
-    personType: nextPolicy.personType,
-    fullName: normalizeValue(current.fullName) || normalizeValue(reference?.fullName),
-    employer: hasRequiredField(nextPolicy, "employer")
-      ? shouldResetEmployer
-        ? ""
-        : current.employer
-      : shouldResetEmployer
-        ? nextPolicy.defaults.employer
-        : current.employer,
-    jobTitle: hasRequiredField(nextPolicy, "jobTitle")
-      ? shouldResetJobTitle
-        ? ""
-        : current.jobTitle
-      : shouldResetJobTitle
-        ? nextPolicy.defaults.jobTitle
-        : current.jobTitle,
+    personType: seeded.personType,
+    fullName: normalizeText(current?.fullName) || seeded.fullName,
+    employer: normalizeText(current?.employer) || seeded.employer,
+    jobTitle: normalizeText(current?.jobTitle) || seeded.jobTitle,
   };
 }

@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { resolveSocketOrigin } from "@/lib/network/runtime-url";
 import type { LiveFeedStatus, LiveOperationsEvent } from "@/lib/realtime/operations-types";
 
-const socketUrl =
-  process.env.NEXT_PUBLIC_API_SOCKET_IO_URL?.replace(/\/$/, "") ??
-  "http://localhost:4001";
+const socketUrl = resolveSocketOrigin();
 
 interface UseOperationsRealtimeOptions {
   plantId?: string;

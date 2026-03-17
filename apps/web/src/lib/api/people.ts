@@ -1,6 +1,7 @@
 import { httpClient } from "./http-client";
 import { downloadAuthenticatedFile } from "./file-download";
 import { fetchWithQueryCache, invalidateQueryCache, normalizeQueryParams } from "./query-cache";
+import { resolveApiOrigin } from "@/lib/network/runtime-url";
 
 export interface Person {
   id: string;
@@ -86,7 +87,7 @@ export function buildPersonHistoryExportUrl(personId: string, params?: {
   if (params?.to) searchParams.set("to", params.to);
   if (params?.status && params.status !== "ALL") searchParams.set("status", params.status);
   const query = searchParams.toString();
-  const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:4000";
+  const base = resolveApiOrigin();
   return `${base}/api/v1/people/${personId}/export${query ? `?${query}` : ""}`;
 }
 
