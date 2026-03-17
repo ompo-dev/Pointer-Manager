@@ -1,1 +1,5 @@
-export { default } from "../../../../app/(dashboard)/people/page";
+import { PeopleScreen } from "@/modules/people/people-screen";
+
+export default function PeoplePage() {
+  return <PeopleScreen />;
+}

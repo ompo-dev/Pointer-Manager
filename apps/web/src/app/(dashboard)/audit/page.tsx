@@ -1,1 +1,5 @@
-export { default } from "../../../../app/(dashboard)/audit/page";
+import { AuditScreen } from "@/modules/audit/audit-screen";
+
+export default function AuditPage() {
+  return <AuditScreen />;
+}

@@ -1,1 +1,5 @@
-export { default } from "../../../../app/(dashboard)/active-access/page";
+import { ActiveAccessScreen } from "@/modules/active-access/active-access-screen";
+
+export default function ActiveAccessPage() {
+  return <ActiveAccessScreen />;
+}

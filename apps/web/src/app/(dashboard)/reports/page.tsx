@@ -1,1 +1,5 @@
-export { default } from "../../../../app/(dashboard)/reports/page";
+import { ReportsScreen } from "@/modules/reports/reports-screen";
+
+export default function ReportsPage() {
+  return <ReportsScreen />;
+}
