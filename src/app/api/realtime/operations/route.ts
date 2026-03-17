@@ -1,3 +1,5 @@
+import type { AppModule } from "@api/domains/auth/domain/user-role";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -32,22 +34,22 @@ function createCommentChunk(comment: string) {
 }
 
 function normalizeModulePermissions(
-  permissionsByRole: Record<string, readonly string[]>,
+  permissionsByRole: Record<string, readonly AppModule[]>,
   role: string,
   modulePermissions: unknown,
 ) {
   const allowedPermissions = permissionsByRole[role] ?? [];
 
   if (!Array.isArray(modulePermissions)) {
-    return allowedPermissions;
+    return [...allowedPermissions];
   }
 
   const normalized = modulePermissions.filter(
-    (value): value is string =>
-      typeof value === "string" && allowedPermissions.includes(value),
+    (value): value is AppModule =>
+      typeof value === "string" && allowedPermissions.includes(value as AppModule),
   );
 
-  return normalized.length > 0 ? normalized : allowedPermissions;
+  return normalized.length > 0 ? normalized : [...allowedPermissions];
 }
 
 export async function GET(request: Request) {

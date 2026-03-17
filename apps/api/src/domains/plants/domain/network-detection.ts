@@ -129,6 +129,11 @@ function isLoopbackIpv4(value?: string | null) {
   return !!parts && parts[0] === 127;
 }
 
+function isLinkLocalIpv4(value?: string | null) {
+  const parts = parseIpv4(value);
+  return !!parts && parts[0] === 169 && parts[1] === 254;
+}
+
 function isPrivateIpv4(value?: string | null) {
   const parts = parseIpv4(value);
 
@@ -145,6 +150,20 @@ function isPrivateIpv4(value?: string | null) {
   }
 
   return parts[0] === 192 && parts[1] === 168;
+}
+
+function isCarrierGradeNatIpv4(value?: string | null) {
+  const parts = parseIpv4(value);
+
+  if (!parts) {
+    return false;
+  }
+
+  return parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127;
+}
+
+function isLocalAreaIpv4(value?: string | null) {
+  return isPrivateIpv4(value) || isCarrierGradeNatIpv4(value);
 }
 
 function buildNetworkCidr(value?: string | null, prefix = 24) {
@@ -248,9 +267,17 @@ function shouldIgnoreInterfaceName(interfaceName: string) {
   return [
     "vethernet",
     "hyper-v",
+    "virtual",
     "virtualbox",
     "vmware",
     "docker",
+    "bridge",
+    "br-",
+    "vint",
+    "tap",
+    "tun",
+    "vpn",
+    "npcap",
     "loopback",
     "wsl",
     "tailscale",
@@ -389,15 +416,17 @@ function readWindowsWifiInterfaces() {
   }
 }
 
-function inspectHostNetworkCandidates() {
-  const wifiDetails = readWindowsWifiInterfaces();
+export function buildHostNetworkCandidates(
+  networkInterfaces: Record<string, os.NetworkInterfaceInfo[] | undefined>,
+  wifiDetails: HostWifiDetails[],
+) {
   const wifiByInterfaceName = new Map(
     wifiDetails.map((item) => [item.interfaceName.toLowerCase(), item]),
   );
   const candidates: DetectedPlantNetworkCandidate[] = [];
 
   for (const [interfaceName, addresses] of Object.entries(
-    os.networkInterfaces(),
+    networkInterfaces,
   ) as Array<[string, os.NetworkInterfaceInfo[] | undefined]>) {
     if (shouldIgnoreInterfaceName(interfaceName)) {
       continue;
@@ -415,6 +444,10 @@ function inspectHostNetworkCandidates() {
 
     const ipAddress = normalizeIpAddress(ipv4Address.address);
     if (!isIpv4(ipAddress)) {
+      continue;
+    }
+
+    if (isLinkLocalIpv4(ipAddress)) {
       continue;
     }
 
@@ -493,6 +526,10 @@ function inspectHostNetworkCandidates() {
   });
 
   return enrichedCandidates.sort((left, right) => left.label.localeCompare(right.label, "pt-BR"));
+}
+
+function inspectHostNetworkCandidates() {
+  return buildHostNetworkCandidates(os.networkInterfaces(), readWindowsWifiInterfaces());
 }
 
 function buildRequestCandidate(
@@ -588,6 +625,26 @@ function selectCurrentCandidate(
 
     if (browserConnectionKind !== "unknown" && candidate.connectionKind === browserConnectionKind) {
       score += 20;
+    }
+
+    if (candidate.ssid || candidate.bssid) {
+      score += 35;
+    }
+
+    if (candidate.connectionKind === "ethernet") {
+      score += 15;
+    }
+
+    if (candidate.connectionKind === "unknown") {
+      score -= 20;
+    }
+
+    if (candidate.ipAddress && isLocalAreaIpv4(candidate.ipAddress)) {
+      score += 20;
+    }
+
+    if (candidate.ipAddress && isLinkLocalIpv4(candidate.ipAddress)) {
+      score -= 200;
     }
 
     if (candidate.source === "host-interface") {

@@ -1,5 +1,8 @@
 import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";
+import { existsSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
 
 const require = createRequire(import.meta.url);
 
@@ -53,7 +56,9 @@ class InlineWorker {
 }
 
 async function main() {
-  runPrismaGenerate();
+  if (process.argv.includes("--with-prisma")) {
+    runPrismaGenerate();
+  }
 
   const workerModulePath = require.resolve("next/dist/lib/worker");
   require.cache[workerModulePath] = {
@@ -70,6 +75,12 @@ async function main() {
   const nextBuild = nextBuildModule.default ?? nextBuildModule;
 
   await nextBuild(process.cwd(), false, false, false, false);
+
+  const buildIdPath = path.join(process.cwd(), ".next", "BUILD_ID");
+
+  if (!existsSync(buildIdPath)) {
+    writeFileSync(buildIdPath, `point-manager-${crypto.randomUUID()}`, "utf8");
+  }
 }
 
 main().catch((error) => {

@@ -38,7 +38,7 @@
     "start": "node ./scripts/next-start.mjs",
     "build": "node ./scripts/next-build.mjs",
     "typecheck": "node ./node_modules/typescript/lib/tsc.js -p tsconfig.typecheck.json --noEmit",
-    "vercel:build": "bun run build",
+    "vercel:build": "node ./scripts/next-build.mjs --with-prisma",
     "vercel:dev": "bun run dev",
     "dev:api": "bun --watch apps/api/src/index.ts",
     "build:auth": "bun run --cwd packages/auth build",
