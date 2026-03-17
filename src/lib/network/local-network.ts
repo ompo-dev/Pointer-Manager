@@ -24,6 +24,30 @@ function normalizeIpv4(value: string) {
   return normalized;
 }
 
+function isPrivateIpv4(value: string) {
+  const normalized = normalizeIpv4(value);
+
+  if (!normalized) {
+    return false;
+  }
+
+  const parts = normalized.split(".").map((part) => Number.parseInt(part, 10));
+
+  if (parts[0] === 10) {
+    return true;
+  }
+
+  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) {
+    return true;
+  }
+
+  if (parts[0] === 192 && parts[1] === 168) {
+    return true;
+  }
+
+  return parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127;
+}
+
 export function readBrowserConnectionType() {
   if (typeof navigator === "undefined") {
     return null;
@@ -67,6 +91,20 @@ export function readBrowserConnectionProfile() {
     type: readBrowserConnectionType(),
     effectiveType: readBrowserConnectionEffectiveType(),
   };
+}
+
+export function readBrowserHostnameIpv4Candidate() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const hostname = normalizeIpv4(window.location.hostname);
+
+  if (!hostname || !isPrivateIpv4(hostname)) {
+    return null;
+  }
+
+  return hostname;
 }
 
 export async function captureBrowserLocation(options?: PositionOptions) {

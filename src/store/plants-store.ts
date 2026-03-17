@@ -14,6 +14,7 @@ import {
 import {
   captureBrowserLocation,
   detectBrowserLocalIpv4Candidates,
+  readBrowserHostnameIpv4Candidate,
   readBrowserConnectionProfile,
 } from "@/lib/network/local-network";
 import {
@@ -497,7 +498,15 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
       : null;
 
     try {
-      const browserIpCandidates = await detectBrowserLocalIpv4Candidates();
+      const hostnameCandidate = readBrowserHostnameIpv4Candidate();
+      const browserIpCandidates = Array.from(
+        new Set(
+          [
+            ...(await detectBrowserLocalIpv4Candidates()),
+            hostnameCandidate,
+          ].filter((value): value is string => !!value),
+        ),
+      );
       const connectionProfile = readBrowserConnectionProfile();
       const detection = await detectCurrentPlantNetwork({
         browserIpCandidates,
