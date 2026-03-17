@@ -74,8 +74,3 @@ Usinas
 • Fechamento automático ao virar o dia
 • Evitar registros duplicados
 • Alertas para pontos em aberto
-14. Tecnologias Recomendadas
-• Frontend: React ou Next.js
-• Backend: Node.js / NestJS ou Laravel
-• Banco de dados: PostgreSQL
-• Infraestrutura: AWS ou Cloud

@@ -49,6 +49,18 @@
   --sidebar-accent-foreground: 222 47% 11%;
   --sidebar-border: 214 20% 86%;
   --sidebar-ring: 213 94% 56%;
+  --badge-success-bg: 145 55% 93%;
+  --badge-success-border: 145 35% 77%;
+  --badge-success-foreground: 145 63% 28%;
+  --badge-warning-bg: 38 100% 93%;
+  --badge-warning-border: 38 75% 78%;
+  --badge-warning-foreground: 32 90% 32%;
+  --badge-info-bg: 204 100% 94%;
+  --badge-info-border: 204 72% 80%;
+  --badge-info-foreground: 214 84% 33%;
+  --badge-danger-bg: 0 100% 96%;
+  --badge-danger-border: 0 70% 84%;
+  --badge-danger-foreground: 0 72% 42%;
 }
 
 * {
@@ -57,18 +69,22 @@
 
 html {
   scroll-behavior: smooth;
+  background: hsl(var(--sidebar));
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   color: hsl(var(--pm-ink));
-  background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.16), transparent 28%),
-    hsl(var(--pm-canvas));
-  background-size: auto, auto, auto;
+  background: hsl(var(--sidebar));
   font-family: var(--font-body), sans-serif;
+}
+
+html,
+body {
+  transition:
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 a {
@@ -87,7 +103,7 @@ textarea {
 }
 
 .notion-panel {
-  background: rgba(255, 255, 255, 0.82);
+  background: hsl(var(--card) / 0.82);
   backdrop-filter: blur(22px);
 }
 
@@ -116,41 +132,124 @@ textarea {
   color: hsl(var(--pm-muted));
 }
 
-@layer base {
-  .dark {
-    --pm-canvas: 222 36% 8%;
-    --pm-ink: 210 40% 96%;
-    --pm-muted: 215 20% 70%;
-    --pm-line: 217 19% 21%;
-    --background: 222 36% 8%;
-    --foreground: 210 40% 96%;
-    --card: 222 32% 11%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 32% 11%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 213 94% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 19% 18%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 217 19% 18%;
-    --muted-foreground: 215 20% 70%;
-    --accent: 213 94% 60%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 72% 58%;
-    --destructive-foreground: 210 40% 96%;
-    --border: 217 19% 21%;
-    --input: 217 19% 21%;
-    --ring: 213 94% 60%;
-    --sidebar: 222 32% 11%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 213 94% 60%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 19% 18%;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 217 19% 21%;
-    --sidebar-ring: 213 94% 60%;
+.dark {
+  --pm-canvas: 222 36% 8%;
+  --pm-ink: 210 40% 96%;
+  --pm-muted: 215 20% 70%;
+  --pm-line: 217 19% 21%;
+  --background: 222 36% 8%;
+  --foreground: 210 40% 96%;
+  --card: 222 32% 11%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 32% 11%;
+  --popover-foreground: 210 40% 96%;
+  --primary: 213 94% 60%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 217 19% 18%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 19% 18%;
+  --muted-foreground: 215 20% 70%;
+  --accent: 213 94% 60%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 72% 58%;
+  --destructive-foreground: 210 40% 96%;
+  --border: 217 19% 21%;
+  --input: 217 19% 21%;
+  --ring: 213 94% 60%;
+  --sidebar: 222 32% 11%;
+  --sidebar-foreground: 210 40% 96%;
+  --sidebar-primary: 213 94% 60%;
+  --sidebar-primary-foreground: 222 47% 11%;
+  --sidebar-accent: 217 19% 18%;
+  --sidebar-accent-foreground: 210 40% 96%;
+  --sidebar-border: 217 19% 21%;
+  --sidebar-ring: 213 94% 60%;
+  --badge-success-bg: 145 45% 16%;
+  --badge-success-border: 145 38% 26%;
+  --badge-success-foreground: 145 58% 84%;
+  --badge-warning-bg: 38 55% 16%;
+  --badge-warning-border: 38 45% 27%;
+  --badge-warning-foreground: 38 95% 82%;
+  --badge-info-bg: 206 52% 16%;
+  --badge-info-border: 206 42% 28%;
+  --badge-info-foreground: 203 100% 86%;
+  --badge-danger-bg: 0 42% 16%;
+  --badge-danger-border: 0 36% 28%;
+  --badge-danger-foreground: 0 88% 86%;
+}
+
+html.theme-changing *,
+html.theme-changing *::before,
+html.theme-changing *::after {
+  transition-property:
+    background-color,
+    border-color,
+    color,
+    fill,
+    stroke,
+    box-shadow,
+    text-decoration-color;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: fade-in;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.96;
+    filter: saturate(0.96);
   }
 
+  to {
+    opacity: 1;
+    filter: saturate(1);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    filter: saturate(1);
+  }
+
+  to {
+    opacity: 0.96;
+    filter: saturate(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    transition: none;
+  }
+
+  html.theme-changing *,
+  html.theme-changing *::before,
+  html.theme-changing *::after {
+    transition-duration: 0.01ms;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.01ms;
+  }
+}
+
+@layer base {
   .theme {
     --font-sans: var(--font-sans);
   }
@@ -160,7 +259,7 @@ textarea {
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-sidebar text-foreground;
   }
 
   html {

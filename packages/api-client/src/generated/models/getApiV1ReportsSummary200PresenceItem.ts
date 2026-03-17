@@ -7,7 +7,7 @@
  */
 
 export type GetApiV1ReportsSummary200PresenceItem = {
-  employeeId: string;
+  personId: string;
   fullName: string;
   cpf: string;
   presentDays: number;

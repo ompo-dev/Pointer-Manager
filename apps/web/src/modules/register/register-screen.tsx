@@ -14,11 +14,27 @@ import {
   UserRound,
   Wifi,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { AccessFlowBadge, RealtimeBadge } from "@/components/status-badges";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
+import {
+  showErrorToast,
+  showInfoToast,
+  showSuccessToast,
+  showWarningToast,
+} from "@/lib/toast";
+import { formatPersonTypeLabel } from "@/lib/utils";
+import { resolveAccessMode } from "@/modules/register/access-intake";
+import { RegisterSuccessCard } from "@/modules/register/register-success-card";
 import { useRegisterStore } from "@/store/register-store";
 
 function formatCpf(value: string) {
@@ -42,11 +58,12 @@ function formatDateTime(value?: string | null) {
 }
 
 export function RegisterScreen() {
-  const [plantId] = useQueryState("uuid", parseAsString);
+  const [plantToken] = useQueryState("qrToken", parseAsString);
   const plant = useRegisterStore((state) => state.plant);
   const networkStatus = useRegisterStore((state) => state.networkStatus);
   const locationStatus = useRegisterStore((state) => state.locationStatus);
   const intake = useRegisterStore((state) => state.intake);
+  const receipt = useRegisterStore((state) => state.receipt);
   const form = useRegisterStore((state) => state.form);
   const location = useRegisterStore((state) => state.location);
   const feedback = useRegisterStore((state) => state.feedback);
@@ -56,7 +73,9 @@ export function RegisterScreen() {
   const checkingCpf = useRegisterStore((state) => state.checkingCpf);
   const submitting = useRegisterStore((state) => state.submitting);
   const loadPlant = useRegisterStore((state) => state.loadPlant);
-  const refreshNetworkStatus = useRegisterStore((state) => state.refreshNetworkStatus);
+  const refreshNetworkStatus = useRegisterStore(
+    (state) => state.refreshNetworkStatus,
+  );
   const setCpf = useRegisterStore((state) => state.setCpf);
   const setPersonType = useRegisterStore((state) => state.setPersonType);
   const setFormValue = useRegisterStore((state) => state.setFormValue);
@@ -70,26 +89,26 @@ export function RegisterScreen() {
   const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!plantId) {
+    if (!plantToken) {
       return;
     }
 
-    void loadPlant(plantId);
-  }, [loadPlant, plantId]);
+    void loadPlant(plantToken);
+  }, [loadPlant, plantToken]);
 
   useEffect(() => {
-    if (!plantId) {
+    if (!plantToken) {
       return;
     }
 
     const intervalId = window.setInterval(() => {
-      void refreshNetworkStatus(plantId, { captureLocation: true });
+      void refreshNetworkStatus(plantToken, { captureLocation: true });
     }, 10000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [plantId, refreshNetworkStatus]);
+  }, [plantToken, refreshNetworkStatus]);
 
   const deviceLabel = useMemo(() => {
     if (typeof navigator === "undefined") {
@@ -99,39 +118,48 @@ export function RegisterScreen() {
     return navigator.userAgent;
   }, []);
 
-  const requiresSelfie = intake?.plant.requireSelfie ?? plant?.requireSelfie ?? false;
+  const requiresSelfie =
+    intake?.plant.requireSelfie ?? plant?.requireSelfie ?? false;
   const requiresGeolocation =
     intake?.plant.requireGeolocation ??
     Boolean(
       plant?.geofenceLatitude !== null &&
-        plant?.geofenceLatitude !== undefined &&
-        plant?.geofenceLongitude !== null &&
-        plant?.geofenceLongitude !== undefined &&
-        plant?.geofenceRadiusMeters !== null &&
-        plant?.geofenceRadiusMeters !== undefined,
+      plant?.geofenceLatitude !== undefined &&
+      plant?.geofenceLongitude !== null &&
+      plant?.geofenceLongitude !== undefined &&
+      plant?.geofenceRadiusMeters !== null &&
+      plant?.geofenceRadiusMeters !== undefined,
     );
 
   const selectedPolicy = useMemo(
     () =>
-      intake?.personTypePolicies.find((policy) => policy.personType === form.personType) ?? null,
+      intake?.personTypePolicies.find(
+        (policy) => policy.personType === form.personType,
+      ) ?? null,
     [form.personType, intake],
   );
-  const suggestedMode = intake?.suggestedMode ?? null;
+  const suggestedMode = intake
+    ? resolveAccessMode(intake, {
+        id: plant?.id ?? null,
+        name: plant?.name ?? null,
+      })
+    : null;
   const knownPerson = intake?.person ?? null;
   const openEntry = intake?.openEntry ?? null;
   const knownPersonPolicy = useMemo(
     () =>
-      intake?.personTypePolicies.find((policy) => policy.personType === knownPerson?.personType) ??
-      null,
+      intake?.personTypePolicies.find(
+        (policy) => policy.personType === knownPerson?.personType,
+      ) ?? null,
     [intake, knownPerson?.personType],
   );
   const submitLabel =
     suggestedMode === "EXIT" ? "Registrar saida" : "Registrar entrada";
   const networkBlocked =
-    plant?.requireWifiMatch &&
-    networkStatus?.status === "BLOCKED";
+    plant?.requireWifiMatch && networkStatus?.status === "BLOCKED";
   const locationBlocked = locationStatus?.status === "BLOCKED";
-  const locationPending = requiresGeolocation && locationStatus?.status === "PENDING";
+  const locationPending =
+    requiresGeolocation && locationStatus?.status === "PENDING";
   const environmentReady =
     !networkBlocked &&
     !locationBlocked &&
@@ -170,6 +198,10 @@ export function RegisterScreen() {
     async function startCamera() {
       if (!navigator.mediaDevices?.getUserMedia) {
         setCameraError("Camera indisponivel neste dispositivo.");
+        showErrorToast(
+          "Camera indisponivel",
+          "Este dispositivo ou navegador nao permite captura de selfie.",
+        );
         return;
       }
 
@@ -197,6 +229,10 @@ export function RegisterScreen() {
         }
       } catch {
         setCameraError("Nao foi possivel abrir a camera frontal.");
+        showErrorToast(
+          "Falha ao abrir camera",
+          "Verifique a permissao da camera e tente novamente.",
+        );
         setCameraOpen(false);
       }
     }
@@ -211,7 +247,7 @@ export function RegisterScreen() {
 
   useEffect(() => () => stopCamera(), []);
 
-  if (!plantId) {
+  if (!plantToken) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-3xl items-start px-4 py-6 sm:px-6 sm:py-10">
         <Card className="w-full">
@@ -222,8 +258,9 @@ export function RegisterScreen() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              O fluxo publico agora usa <code>?uuid=ID_DA_USINA</code> no endereco.
+            <p className="rounded-2xl border border-amber-300/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-100">
+              O fluxo publico agora usa <code>?qrToken=TOKEN_DA_USINA</code> no
+              endereco.
             </p>
           </CardContent>
         </Card>
@@ -236,6 +273,10 @@ export function RegisterScreen() {
 
     if (!video) {
       setCameraError("A camera ainda nao esta pronta.");
+      showWarningToast(
+        "Camera ainda nao esta pronta",
+        "Aguarde alguns instantes antes de capturar a selfie.",
+      );
       return;
     }
 
@@ -248,6 +289,10 @@ export function RegisterScreen() {
     const context = canvas.getContext("2d");
     if (!context) {
       setCameraError("Falha ao capturar a selfie.");
+      showErrorToast(
+        "Falha ao capturar selfie",
+        "Nao foi possivel gerar a imagem da camera.",
+      );
       return;
     }
 
@@ -256,6 +301,10 @@ export function RegisterScreen() {
     setFormValue("selfieUrl", dataUrl);
     setCameraOpen(false);
     setCameraError(null);
+    showSuccessToast(
+      "Selfie capturada",
+      "A foto foi anexada ao registro com sucesso.",
+    );
   }
 
   return (
@@ -263,20 +312,20 @@ export function RegisterScreen() {
       <div className="grid w-full gap-4 xl:grid-cols-[0.92fr_1.08fr]">
         <Card className="overflow-hidden">
           <CardContent className="grid-paper relative min-h-[280px] p-6 sm:min-h-[360px] sm:p-8">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/70 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/70 to-transparent" />
             <div className="relative space-y-5">
-              <Badge>QR Access</Badge>
+              <RealtimeBadge label="QR Access" />
               <div className="space-y-2">
                 <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                   Controle de acesso da usina
                 </h1>
                 <p className="max-w-xl text-sm leading-7 text-muted">
-                  O fluxo identifica a pessoa pelo CPF, sugere entrada ou saida e pede
-                  somente o que for obrigatorio para aquele perfil.
+                  O fluxo identifica a pessoa pelo CPF, sugere entrada ou saida
+                  e pede somente o que for obrigatorio para aquele perfil.
                 </p>
               </div>
 
-              <div className="rounded-[28px] border border-white/70 bg-white/80 p-5">
+              <div className="rounded-[28px] border border-border/70 bg-card/80 p-5">
                 <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted">
                   <QrCode className="size-4" />
                   Usina
@@ -287,34 +336,41 @@ export function RegisterScreen() {
                 <p className="mt-1 text-sm text-muted">
                   {plant?.city ?? "-"} - {plant?.state ?? "-"}
                 </p>
-                <div className="mt-4 grid gap-2 text-sm text-ink/80">
+                <div className="mt-4 grid gap-2 text-sm text-foreground/80">
                   <p className="inline-flex items-center gap-2">
                     <Wifi className="size-4 text-muted" />
-                    {plant?.requireWifiMatch ? "Wi-Fi autorizado obrigatorio" : "Rede livre"}
+                    {plant?.requireWifiMatch
+                      ? "Wi-Fi autorizado obrigatorio"
+                      : "Rede livre"}
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <Camera className="size-4 text-muted" />
-                    {requiresSelfie ? "Selfie obrigatoria" : "Selfie nao exigida"}
+                    {requiresSelfie
+                      ? "Selfie obrigatoria"
+                      : "Selfie nao exigida"}
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <MapPinned className="size-4 text-muted" />
-                    {requiresGeolocation ? "Geolocalizacao obrigatoria" : "Geolocalizacao nao exigida"}
+                    {requiresGeolocation
+                      ? "Geolocalizacao obrigatoria"
+                      : "Geolocalizacao nao exigida"}
                   </p>
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-1">
-                <div className="rounded-3xl border border-white/70 bg-white/80 p-4">
+                <div className="rounded-3xl border border-border/70 bg-card/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                     Fluxo
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-ink/80">
-                    CPF, contexto da pessoa, acao sugerida e validacao de seguranca.
+                  <p className="mt-2 text-sm leading-6 text-foreground/80">
+                    CPF, contexto da pessoa, acao sugerida e validacao de
+                    seguranca.
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-white/70 bg-white/80 p-5">
+              <div className="rounded-[28px] border border-border/70 bg-card/80 p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted">
@@ -333,10 +389,10 @@ export function RegisterScreen() {
                     <p className="text-sm text-muted">
                       {locationBlocked || locationPending
                         ? locationStatus?.message
-                        : networkStatus?.message ??
-                          "Verifique a rede e a localizacao para confirmar se este dispositivo esta autorizado."}
+                        : (networkStatus?.message ??
+                          "Verifique a rede e a localizacao para confirmar se este dispositivo esta autorizado.")}
                     </p>
-                    <div className="space-y-1 text-sm text-ink/80">
+                    <div className="space-y-1 text-sm text-foreground/80">
                       <p>
                         Conexao detectada:{" "}
                         {networkStatus?.currentNetworkName ??
@@ -344,10 +400,13 @@ export function RegisterScreen() {
                           "nao identificada"}
                       </p>
                       <p>
-                        IP observado: {networkStatus?.observedIp ?? "nao identificado"}
+                        IP observado:{" "}
+                        {networkStatus?.observedIp ?? "nao identificado"}
                       </p>
                       <p>
-                        Rede autorizada: {networkStatus?.matchedNetworkName ?? "sem correspondencia"}
+                        Rede autorizada:{" "}
+                        {networkStatus?.matchedNetworkName ??
+                          "sem correspondencia"}
                       </p>
                       <p>
                         Localizacao atual:{" "}
@@ -369,11 +428,18 @@ export function RegisterScreen() {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => void refreshNetworkStatus(plantId, { captureLocation: true })}
+                    onClick={() =>
+                      void refreshNetworkStatus(plantToken, {
+                        captureLocation: true,
+                        notify: true,
+                      })
+                    }
                     disabled={checkingNetwork || locating}
                     className={showManualEnvironmentActions ? "" : "hidden"}
                   >
-                    {checkingNetwork || locating ? "Atualizando..." : "Atualizar ambiente"}
+                    {checkingNetwork || locating
+                      ? "Atualizando..."
+                      : "Atualizar ambiente"}
                   </Button>
                 </div>
               </div>
@@ -381,31 +447,39 @@ export function RegisterScreen() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="py-8">
           <CardHeader className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               <CardTitle>Registrar acesso</CardTitle>
               {suggestedMode ? (
-                <Badge className="border-ink/10 bg-black/5 text-ink">
-                  {suggestedMode === "EXIT"
-                    ? "Saida sugerida"
-                    : suggestedMode === "BLOCKED"
-                      ? "Acesso bloqueado"
-                      : "Entrada sugerida"}
-                </Badge>
+                <AccessFlowBadge
+                  mode={
+                    suggestedMode === "EXIT"
+                      ? "EXIT"
+                      : suggestedMode === "BLOCKED"
+                        ? "BLOCKED"
+                        : "ENTRY"
+                  }
+                />
               ) : null}
             </div>
             <CardDescription>
-              Fluxo pensado para mobile: identificar, validar e concluir em poucos toques.
+              Fluxo pensado para mobile: identificar, validar e concluir em
+              poucos toques.
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-5">
-            <section className="space-y-3 rounded-[28px] border border-line bg-white/80 p-4 sm:p-5">
+            {receipt ? (
+              <RegisterSuccessCard receipt={receipt} onReset={resetForm} />
+            ) : null}
+
+            <section className="space-y-3 rounded-[28px] border border-border bg-card/80 p-4 sm:p-5">
               <div className="space-y-1">
                 <p className="text-sm font-semibold">1. Identificacao</p>
                 <p className="text-sm text-muted">
-                  Informe o CPF para descobrir se o sistema deve abrir entrada ou encerrar saida.
+                  Informe o CPF para descobrir se o sistema deve abrir entrada
+                  ou encerrar saida.
                 </p>
               </div>
 
@@ -420,18 +494,18 @@ export function RegisterScreen() {
                   type="button"
                   className="w-full sm:w-auto"
                   disabled={checkingCpf || loadingPlant}
-                  onClick={() => void lookupAccess(plantId)}
+                  onClick={() => void lookupAccess(plantToken)}
                 >
                   {checkingCpf ? "Consultando..." : "Continuar"}
                 </Button>
               </div>
 
-              {feedback && !intake ? (
+              {feedback && !intake && !receipt ? (
                 <p
                   className={
                     networkBlocked || locationBlocked
-                      ? "rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
-                      : "rounded-2xl border border-line bg-black/5 px-4 py-3 text-sm"
+                      ? "rounded-2xl border border-rose-300/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200"
+                      : "rounded-2xl border border-border bg-muted/70 px-4 py-3 text-sm"
                   }
                 >
                   {feedback}
@@ -440,92 +514,109 @@ export function RegisterScreen() {
             </section>
 
             {intake ? (
-              <section className="space-y-4 rounded-[28px] border border-line bg-[#fbfbfa] p-4 sm:p-5">
+              <section className="space-y-4 rounded-[28px] border border-border bg-card/70 p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm font-semibold">2. Contexto do acesso</p>
                   {suggestedMode === "EXIT" ? (
-                    <Badge className="bg-amber-50 text-amber-800">Saida</Badge>
+                    <AccessFlowBadge mode="EXIT" />
                   ) : suggestedMode === "BLOCKED" ? (
-                    <Badge className="bg-rose-50 text-rose-700">Bloqueado</Badge>
+                    <AccessFlowBadge mode="BLOCKED" />
                   ) : (
-                    <Badge className="bg-emerald-50 text-emerald-700">Entrada</Badge>
+                    <AccessFlowBadge mode="ENTRY" />
                   )}
                 </div>
 
-                {knownPerson ? (
-                  <div className="rounded-3xl border border-line bg-white p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="inline-flex items-center gap-2 text-base font-semibold">
-                          <UserRound className="size-4" />
-                          {knownPerson.fullName}
-                        </p>
-                        <p className="text-sm text-muted">
-                          {knownPersonPolicy?.label ?? knownPerson.personType} / {knownPerson.employer}
-                        </p>
+                <div className="space-y-4">
+                  {knownPerson ? (
+                    <div className="rounded-3xl border border-border bg-card p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="inline-flex items-center gap-2 text-base font-semibold">
+                            <UserRound className="size-4" />
+                            {knownPerson.fullName}
+                          </p>
+                          <p className="text-sm text-muted">
+                            {knownPersonPolicy?.label ??
+                              formatPersonTypeLabel(knownPerson.personType)}{" "}
+                            / {knownPerson.employer}
+                          </p>
+                        </div>
+                        <CheckCircle2 className="mt-1 size-5 text-emerald-600" />
                       </div>
-                      <CheckCircle2 className="mt-1 size-5 text-emerald-600" />
-                    </div>
-                    <p className="mt-3 text-sm text-ink/80">
-                      {knownPerson.jobTitle}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="rounded-3xl border border-dashed border-line bg-white p-4">
-                      <p className="text-sm font-semibold">Primeiro acesso</p>
-                      <p className="mt-1 text-sm text-muted">
-                        Escolha o perfil e preencha somente os campos obrigatorios para essa situacao.
+                      <p className="mt-3 text-sm text-foreground/80">
+                        {knownPerson.jobTitle}
+                      </p>
+                      <p className="mt-3 text-sm text-muted">
+                        Dados recuperados do ultimo cadastro. Ajuste o perfil e
+                        os campos abaixo sempre que este acesso for diferente.
                       </p>
                     </div>
-
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-ink" htmlFor="personType">
-                        Perfil da pessoa
-                      </label>
-                      <Select
-                        id="personType"
-                        value={form.personType}
-                        onChange={(event) => setPersonType(event.target.value)}
-                      >
-                        {intake.personTypePolicies.map((policy) => (
-                          <option key={policy.personType} value={policy.personType}>
-                            {policy.label}
-                          </option>
-                        ))}
-                      </Select>
-                      {selectedPolicy ? (
-                        <p className="text-sm text-muted">{selectedPolicy.description}</p>
-                      ) : null}
+                  ) : (
+                    <div className="rounded-3xl border border-dashed border-border bg-card p-4">
+                      <p className="text-sm font-semibold">Primeiro acesso</p>
+                      <p className="mt-1 text-sm text-muted">
+                        Escolha o perfil e preencha somente os campos
+                        obrigatorios para essa situacao.
+                      </p>
                     </div>
+                  )}
 
-                    {selectedPolicy ? (
-                      <div className="grid gap-3">
-                        {selectedPolicy.requiredFields.map((field) => (
-                          <div key={field.name} className="space-y-2">
-                            <label className="text-sm font-medium text-ink" htmlFor={field.name}>
-                              {field.label}
-                            </label>
-                            <Input
-                              id={field.name}
-                              placeholder={field.placeholder}
-                              value={form[field.name]}
-                              onChange={(event) => setFormValue(field.name, event.target.value)}
-                            />
-                          </div>
-                        ))}
+                  {suggestedMode === "ENTRY" ? (
+                    <>
+                      <div className="space-y-3">
+                        <Label htmlFor="personType">Perfil da pessoa</Label>
+                        <SearchableCombobox
+                          value={form.personType}
+                          onValueChange={(value) => setPersonType(value)}
+                          options={intake.personTypePolicies.map((policy) => ({
+                            value: policy.personType,
+                            label: policy.label,
+                            keywords: [policy.description],
+                          }))}
+                          placeholder="Selecione o perfil"
+                          searchPlaceholder="Buscar perfil..."
+                          emptyMessage="Nenhum perfil encontrado."
+                        />
+                        {selectedPolicy ? (
+                          <p className="text-sm text-muted">
+                            {selectedPolicy.description}
+                          </p>
+                        ) : null}
                       </div>
-                    ) : null}
-                  </div>
-                )}
+
+                      {selectedPolicy ? (
+                        <div className="grid gap-3">
+                          {selectedPolicy.requiredFields.map((field) => (
+                            <div key={field.name} className="space-y-2">
+                              <label
+                                className="text-sm font-medium text-foreground"
+                                htmlFor={field.name}
+                              >
+                                {field.label}
+                              </label>
+                              <Input
+                                id={field.name}
+                                placeholder={field.placeholder}
+                                value={form[field.name]}
+                                onChange={(event) =>
+                                  setFormValue(field.name, event.target.value)
+                                }
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
 
                 {openEntry ? (
-                  <div className="rounded-3xl border border-line bg-white p-4">
+                  <div className="rounded-3xl border border-border bg-card p-4">
                     <p className="inline-flex items-center gap-2 text-sm font-semibold">
                       <Clock3 className="size-4" />
                       Registro em aberto
                     </p>
-                    <p className="mt-2 text-sm text-ink/80">
+                    <p className="mt-2 text-sm text-foreground/80">
                       Entrada em {formatDateTime(openEntry.openedAt)} na usina{" "}
                       <strong>{openEntry.plantName}</strong>.
                     </p>
@@ -535,11 +626,12 @@ export function RegisterScreen() {
             ) : null}
 
             {requiresSelfie && intake ? (
-              <section className="space-y-4 rounded-[28px] border border-line bg-white/80 p-4 sm:p-5">
+              <section className="space-y-4 rounded-[28px] border border-border bg-card/80 p-4 sm:p-5">
                 <div className="space-y-1">
                   <p className="text-sm font-semibold">3. Selfie de presenca</p>
                   <p className="text-sm text-muted">
-                    A selfie e capturada pela camera frontal e anexada ao registro.
+                    A selfie e capturada pela camera frontal e anexada ao
+                    registro.
                   </p>
                 </div>
 
@@ -559,7 +651,11 @@ export function RegisterScreen() {
                         <Camera className="mr-2 size-4" />
                         Capturar selfie
                       </Button>
-                      <Button type="button" variant="secondary" onClick={() => setCameraOpen(false)}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setCameraOpen(false)}
+                      >
                         Fechar camera
                       </Button>
                     </div>
@@ -578,7 +674,13 @@ export function RegisterScreen() {
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => setFormValue("selfieUrl", "")}
+                        onClick={() => {
+                          setFormValue("selfieUrl", "");
+                          showInfoToast(
+                            "Selfie removida",
+                            "Voce pode capturar uma nova foto antes de enviar.",
+                          );
+                        }}
                       >
                         Remover selfie
                       </Button>
@@ -592,7 +694,7 @@ export function RegisterScreen() {
                 )}
 
                 {cameraError ? (
-                  <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  <p className="rounded-2xl border border-rose-300/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
                     {cameraError}
                   </p>
                 ) : null}
@@ -600,39 +702,48 @@ export function RegisterScreen() {
             ) : null}
 
             {requiresGeolocation && (intake || showManualEnvironmentActions) ? (
-              <section className="space-y-4 rounded-[28px] border border-line bg-white/80 p-4 sm:p-5">
+              <section className="space-y-4 rounded-[28px] border border-border bg-card/80 p-4 sm:p-5">
                 <div className="space-y-1">
                   <p className="text-sm font-semibold">4. Geolocalizacao</p>
                   <p className="text-sm text-muted">
-                    Esta usina exige confirmacao de localizacao. A captura acontece automaticamente
-                    ao abrir esta pagina e pode ser refeita aqui.
+                    Esta usina exige confirmacao de localizacao. A captura
+                    acontece automaticamente ao abrir esta pagina e pode ser
+                    refeita aqui.
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-[auto_1fr]">
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => void refreshNetworkStatus(plantId, { captureLocation: true })}
+                    onClick={() =>
+                      void refreshNetworkStatus(plantToken, {
+                        captureLocation: true,
+                        notify: true,
+                      })
+                    }
                     disabled={checkingNetwork || locating}
                   >
                     <MapPinned className="mr-2 size-4" />
                     {locating ? "Capturando..." : "Atualizar localizacao"}
                   </Button>
-                  <div className="rounded-2xl border border-line bg-black/5 px-4 py-3 text-sm">
+                  <div className="rounded-2xl border border-border bg-muted/70 px-4 py-3 text-sm">
                     {location ? (
                       <div className="space-y-1">
                         <p>
-                          {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                          {location.latitude.toFixed(6)},{" "}
+                          {location.longitude.toFixed(6)}
                         </p>
                         {location.accuracyMeters ? (
                           <p className="text-muted">
-                            Precisao aproximada: {Math.round(location.accuracyMeters)} m
+                            Precisao aproximada:{" "}
+                            {Math.round(location.accuracyMeters)} m
                           </p>
                         ) : null}
                         <p className="text-muted">{locationStatus?.message}</p>
                       </div>
                     ) : (
-                      locationStatus?.message ?? "Localizacao ainda nao capturada."
+                      (locationStatus?.message ??
+                      "Localizacao ainda nao capturada.")
                     )}
                   </div>
                 </div>
@@ -640,7 +751,7 @@ export function RegisterScreen() {
             ) : null}
 
             {intake ? (
-              <section className="space-y-4 rounded-[28px] border border-line bg-white/80 p-4 sm:p-5">
+              <section className="space-y-4 rounded-[28px] border border-border bg-card/80 p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
                   <ShieldCheck className="size-4" />
                   {plant?.requireWifiMatch
@@ -652,8 +763,8 @@ export function RegisterScreen() {
                   <p
                     className={
                       networkBlocked || locationBlocked
-                        ? "rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
-                        : "rounded-2xl border border-line bg-black/5 px-4 py-3 text-sm"
+                        ? "rounded-2xl border border-rose-300/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200"
+                        : "rounded-2xl border border-border bg-muted/70 px-4 py-3 text-sm"
                     }
                   >
                     {locationBlocked || locationPending
@@ -666,8 +777,8 @@ export function RegisterScreen() {
                   <p
                     className={
                       intake.blockedReason
-                        ? "rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
-                        : "rounded-2xl border border-line bg-black/5 px-4 py-3 text-sm"
+                        ? "rounded-2xl border border-rose-300/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200"
+                        : "rounded-2xl border border-border bg-muted/70 px-4 py-3 text-sm"
                     }
                   >
                     {intake.blockedReason ? (
@@ -688,7 +799,7 @@ export function RegisterScreen() {
                     disabled={!canSubmit || submitting}
                     onClick={() =>
                       void submit({
-                        plantId,
+                        plantToken,
                         deviceLabel,
                       })
                     }

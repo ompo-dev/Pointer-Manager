@@ -11,11 +11,11 @@ import type { GetApiV1DashboardOverview200OvertimeAlertsItem } from './getApiV1D
 import type { GetApiV1DashboardOverview200LiveEntriesItem } from './getApiV1DashboardOverview200LiveEntriesItem';
 
 export type GetApiV1DashboardOverview200 = {
-  activeEmployees: number;
+  activePeople: number;
   openEntries: number;
   recordsToday: number;
-  plantsOnline: number;
-  employeesWithoutExit: number;
+  plantsWithActivityToday: number;
+  peopleWithoutExit: number;
   hoursByPlantToday: GetApiV1DashboardOverview200HoursByPlantTodayItem[];
   presenceRanking: GetApiV1DashboardOverview200PresenceRankingItem[];
   overtimeAlerts: GetApiV1DashboardOverview200OvertimeAlertsItem[];

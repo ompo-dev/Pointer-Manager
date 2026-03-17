@@ -3,15 +3,15 @@
 import { useEffect } from "react";
 import {
   useDashboardStore,
-  type LiveFeedStatus,
-  type LiveOperationsEvent,
 } from "@/store/dashboard-store";
+import { useOperationsRealtime } from "@/lib/realtime/use-operations-realtime";
+import type { LiveOperationsEvent } from "@/lib/realtime/operations-types";
 
-const wsUrl =
-  process.env.NEXT_PUBLIC_API_WS_URL?.replace(/\/$/, "") ??
-  "ws://localhost:4000/realtime";
+interface UseLiveOperationsFeedOptions {
+  onEvent?: (event: LiveOperationsEvent) => void;
+}
 
-export function useLiveOperationsFeed(plantId?: string) {
+export function useLiveOperationsFeed(plantId?: string, options?: UseLiveOperationsFeedOptions) {
   const events = useDashboardStore((state) => state.events);
   const status = useDashboardStore((state) => state.realtimeStatus);
   const pushEvent = useDashboardStore((state) => state.pushEvent);
@@ -20,35 +20,16 @@ export function useLiveOperationsFeed(plantId?: string) {
 
   useEffect(() => {
     resetFeed();
-
-    const url = new URL(wsUrl);
-
-    if (plantId && plantId !== "all") {
-      url.searchParams.set("plantId", plantId);
-    }
-
-    const socket = new WebSocket(url);
-
-    const updateStatus = (nextStatus: LiveFeedStatus) => {
-      setRealtimeStatus(nextStatus);
-    };
-
-    socket.addEventListener("open", () => updateStatus("connected"));
-    socket.addEventListener("close", () => updateStatus("offline"));
-    socket.addEventListener("error", () => updateStatus("offline"));
-    socket.addEventListener("message", (event) => {
-      try {
-        const data = JSON.parse(event.data) as LiveOperationsEvent;
-        pushEvent(data);
-      } catch {
-        updateStatus("offline");
-      }
-    });
-
-    return () => {
-      socket.close();
-    };
   }, [plantId, pushEvent, resetFeed, setRealtimeStatus]);
+
+  useOperationsRealtime({
+    plantId,
+    onStatusChange: setRealtimeStatus,
+    onEvent: (event) => {
+      pushEvent(event);
+      options?.onEvent?.(event);
+    },
+  });
 
   return { events, status };
 }

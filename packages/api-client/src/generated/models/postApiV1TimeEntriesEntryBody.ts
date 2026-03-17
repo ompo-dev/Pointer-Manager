@@ -10,10 +10,14 @@ export type PostApiV1TimeEntriesEntryBody = {
   /** @minLength 11 */
   cpf: string;
   plantToken: string;
-  fullName?: string;
-  employer?: string;
-  jobTitle?: string;
-  personType?: string;
+  /** @nullable */
+  fullName?: string | null;
+  /** @nullable */
+  employer?: string | null;
+  /** @nullable */
+  jobTitle?: string | null;
+  /** @nullable */
+  personType?: string | null;
   /** @nullable */
   email?: string | null;
   /** @nullable */
@@ -22,14 +26,21 @@ export type PostApiV1TimeEntriesEntryBody = {
   photoUrl?: string | null;
   /** @nullable */
   notes?: string | null;
-  deviceIp?: string;
-  deviceLabel?: string;
-  wifiSsid?: string;
-  wifiBssid?: string;
-  selfieUrl?: string;
+  /** @nullable */
+  deviceIp?: string | null;
+  /** @nullable */
+  deviceLabel?: string | null;
+  /** @nullable */
+  wifiSsid?: string | null;
+  /** @nullable */
+  wifiBssid?: string | null;
+  /** @nullable */
+  selfieUrl?: string | null;
   geoLatitude?: number;
   geoLongitude?: number;
-  networkType?: string;
-  networkEffectiveType?: string;
+  /** @nullable */
+  networkType?: string | null;
+  /** @nullable */
+  networkEffectiveType?: string | null;
   browserIpCandidates?: string[];
 };

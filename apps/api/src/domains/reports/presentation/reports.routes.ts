@@ -67,20 +67,18 @@ export const reportsRoutes = new Elysia({ prefix: "/reports" })
       if (format === "pdf") {
         const pdf = await appServices.reports.exportPdf(reportType, filters);
 
-        set.headers = {
-          "content-type": "application/pdf",
-          "content-disposition": `attachment; filename=\"report-${reportType}.pdf\"`,
-        };
+        set.headers["content-type"] = "application/pdf";
+        set.headers["content-disposition"] =
+          `attachment; filename=\"report-${reportType}.pdf\"`;
 
         return pdf;
       }
 
       const csv = await appServices.reports.exportCsv(reportType, filters);
 
-      set.headers = {
-        "content-type": "text/csv; charset=utf-8",
-        "content-disposition": `attachment; filename=\"report-${reportType}.csv\"`,
-      };
+      set.headers["content-type"] = "text/csv; charset=utf-8";
+      set.headers["content-disposition"] =
+        `attachment; filename=\"report-${reportType}.csv\"`;
 
       return csv;
     } catch (error) {

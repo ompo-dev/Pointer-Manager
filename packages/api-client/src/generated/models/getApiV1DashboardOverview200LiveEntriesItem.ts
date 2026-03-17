@@ -8,9 +8,10 @@
 
 export type GetApiV1DashboardOverview200LiveEntriesItem = {
   id: string;
-  employeeName: string;
+  personName: string;
   personType: string;
   plantName: string;
   openedAt: string;
+  elapsedMinutes: number;
   status: string;
 };

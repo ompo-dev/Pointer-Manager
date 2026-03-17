@@ -9,6 +9,12 @@ import {
   runAutoClose,
   type TimeEntryRecord,
 } from "@/lib/api/time-entries";
+import {
+  showErrorToast,
+  showLoadingToast,
+  showSuccessToast,
+  showWarningToast,
+} from "@/lib/toast";
 import { resolveErrorMessage } from "@/store/store-utils";
 
 export interface AdjustFormState {
@@ -67,6 +73,8 @@ interface TimeEntriesStore {
     status?: string;
     from?: string;
     to?: string;
+  }, options?: {
+    preserveDraft?: boolean;
   }) => Promise<void>;
   loadPlantOptions: () => Promise<void>;
   setSelectedEntryId: (entryId: string | null) => void;
@@ -88,25 +96,34 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
   closing: false,
   adjusting: false,
   autoClosing: false,
-  async loadEntries(filters) {
+  async loadEntries(filters, options) {
     set({ loading: true, feedback: null });
 
     try {
       const entries = await fetchTimeEntries(filters);
-      const selectedEntryId = get().selectedEntryId ?? entries[0]?.id ?? null;
+      const currentState = get();
+      const selectedEntryId =
+        currentState.selectedEntryId && entries.some((entry) => entry.id === currentState.selectedEntryId)
+          ? currentState.selectedEntryId
+          : entries[0]?.id ?? null;
       const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null;
 
       set({
         entries,
         selectedEntryId,
-        adjustForm: buildAdjustState(selectedEntry),
+        adjustForm:
+          options?.preserveDraft && currentState.selectedEntryId === selectedEntryId
+            ? currentState.adjustForm
+            : buildAdjustState(selectedEntry),
         loading: false,
       });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar os registros.");
       set({
         loading: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar os registros."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar registros", message);
     }
   },
   async loadPlantOptions() {
@@ -116,10 +133,12 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
       const plantOptions = await fetchPlants();
       set({ plantOptions, loadingPlantOptions: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar as usinas.");
       set({
         loadingPlantOptions: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar as usinas."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar usinas", message);
     }
   },
   setSelectedEntryId(selectedEntryId) {
@@ -149,11 +168,16 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
 
     if (!selectedEntry) {
       set({ feedback: "Selecione um registro para encerrar." });
+      showWarningToast("Selecione um registro", "Escolha um registro para encerrar manualmente.");
       return;
     }
 
     const previousEntries = entries;
     const optimisticClosedAt = new Date().toISOString();
+    const toastId = showLoadingToast(
+      "Encerrando registro",
+      `Finalizando o acesso de ${selectedEntry.person.fullName}.`,
+    );
 
     set({
       closing: true,
@@ -182,13 +206,20 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
         closing: false,
         feedback: "Registro encerrado manualmente.",
       });
+      showSuccessToast(
+        "Registro encerrado",
+        `O acesso de ${updated.person.fullName} foi encerrado manualmente.`,
+        { id: toastId },
+      );
     } catch (error) {
+      const message = resolveErrorMessage(error, "Falha ao encerrar registro.");
       set({
         entries: previousEntries,
         adjustForm: buildAdjustState(selectedEntry),
         closing: false,
-        feedback: resolveErrorMessage(error, "Falha ao encerrar registro."),
+        feedback: message,
       });
+      showErrorToast("Falha ao encerrar registro", message, { id: toastId });
     }
   },
   async adjustSelectedEntry() {
@@ -198,6 +229,7 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
 
     if (!selectedEntry) {
       set({ feedback: "Selecione um registro para ajustar." });
+      showWarningToast("Selecione um registro", "Escolha um registro para aplicar o ajuste.");
       return;
     }
 
@@ -210,9 +242,14 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
       closedAt: adjustForm.closedAt
         ? new Date(adjustForm.closedAt).toISOString()
         : null,
+      elapsedMinutes: selectedEntry.elapsedMinutes,
       notes: adjustForm.notes || null,
       status: adjustForm.status,
     };
+    const toastId = showLoadingToast(
+      "Aplicando ajuste",
+      `Salvando alteracoes do registro de ${selectedEntry.person.fullName}.`,
+    );
 
     set({
       adjusting: true,
@@ -237,13 +274,20 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
         adjusting: false,
         feedback: "Registro ajustado com sucesso.",
       });
+      showSuccessToast(
+        "Registro ajustado",
+        `As alteracoes de ${updated.person.fullName} foram salvas.`,
+        { id: toastId },
+      );
     } catch (error) {
+      const message = resolveErrorMessage(error, "Falha ao ajustar registro.");
       set({
         entries: previousEntries,
         adjustForm: buildAdjustState(selectedEntry),
         adjusting: false,
-        feedback: resolveErrorMessage(error, "Falha ao ajustar registro."),
+        feedback: message,
       });
+      showErrorToast("Falha ao ajustar registro", message, { id: toastId });
     }
   },
   async runAutoClose(plantId) {
@@ -256,6 +300,12 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
             closedReason: "AUTO_CLOSE_PENDING",
           }
         : entry,
+    );
+    const toastId = showLoadingToast(
+      "Executando auto-close",
+      plantId
+        ? "Encerrando automaticamente os registros da usina filtrada."
+        : "Encerrando automaticamente os registros em aberto.",
     );
 
     set({
@@ -283,12 +333,19 @@ export const useTimeEntriesStore = create<TimeEntriesStore>((set, get) => ({
           feedback: `${result.closedEntryIds.length} registros encerrados automaticamente.`,
         };
       });
+      showSuccessToast(
+        "Auto-close concluido",
+        `${result.closedEntryIds.length} registro(s) foram encerrados automaticamente.`,
+        { id: toastId },
+      );
     } catch (error) {
+      const message = resolveErrorMessage(error, "Falha ao executar auto-close.");
       set({
         entries: previousEntries,
         autoClosing: false,
-        feedback: resolveErrorMessage(error, "Falha ao executar auto-close."),
+        feedback: message,
       });
+      showErrorToast("Falha ao executar auto-close", message, { id: toastId });
     }
   },
 }));

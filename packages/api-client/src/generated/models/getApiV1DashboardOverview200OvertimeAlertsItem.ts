@@ -8,7 +8,7 @@
 
 export type GetApiV1DashboardOverview200OvertimeAlertsItem = {
   id: string;
-  employeeName: string;
+  personName: string;
   plantName: string;
   minutesOpen: number;
 };

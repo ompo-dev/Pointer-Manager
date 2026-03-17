@@ -10,6 +10,7 @@ interface SessionUser {
   role: string;
   plantId: string | null;
   status: string;
+  modulePermissions: string[];
 }
 
 interface SessionState {

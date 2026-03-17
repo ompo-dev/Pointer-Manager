@@ -8,6 +8,11 @@ import {
   type AccessUser,
 } from "@/lib/api/access";
 import { fetchPlants, type Plant } from "@/lib/api/plants";
+import {
+  showErrorToast,
+  showLoadingToast,
+  showSuccessToast,
+} from "@/lib/toast";
 import { createOptimisticId, resolveErrorMessage } from "@/store/store-utils";
 
 export const defaultAccessPermissions = {
@@ -91,7 +96,7 @@ interface AccessStore {
   setFormValue: <K extends keyof AccessFormState>(key: K, value: AccessFormState[K]) => void;
   resetForm: () => void;
   clearFeedback: () => void;
-  saveUser: () => Promise<void>;
+  saveUser: () => Promise<string | null>;
 }
 
 export const useAccessStore = create<AccessStore>((set, get) => ({
@@ -110,10 +115,12 @@ export const useAccessStore = create<AccessStore>((set, get) => ({
       const users = await fetchAccessUsers();
       set({ users, loadingUsers: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Falha ao carregar usuarios.");
       set({
         loadingUsers: false,
-        feedback: resolveErrorMessage(error, "Falha ao carregar usuarios."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar usuarios", message);
     }
   },
   async loadPlantOptions() {
@@ -123,10 +130,12 @@ export const useAccessStore = create<AccessStore>((set, get) => ({
       const plantOptions = await fetchPlants();
       set({ plantOptions, loadingPlants: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Falha ao carregar usinas.");
       set({
         loadingPlants: false,
-        feedback: resolveErrorMessage(error, "Falha ao carregar usinas."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar usinas", message);
     }
   },
   selectUser(selectedUserId) {
@@ -162,6 +171,12 @@ export const useAccessStore = create<AccessStore>((set, get) => ({
     const optimisticId = selectedUserId ?? createOptimisticId("access-user");
     const optimisticUser = buildOptimisticUser(optimisticId, form, currentUser);
     const previousUsers = users;
+    const toastId = showLoadingToast(
+      selectedUserId ? "Atualizando usuario" : "Criando usuario",
+      selectedUserId
+        ? "Aplicando alteracoes do acesso administrativo."
+        : "Preparando o novo acesso administrativo.",
+    );
 
     set({
       saving: true,
@@ -193,14 +208,25 @@ export const useAccessStore = create<AccessStore>((set, get) => ({
         selectedUserId: savedUser.id,
         form: buildFormState(savedUser),
       }));
+      showSuccessToast(
+        selectedUserId ? "Usuario atualizado" : "Usuario criado",
+        "As permissoes administrativas foram salvas com sucesso.",
+        { id: toastId },
+      );
+
+      return savedUser.id;
     } catch (error) {
+      const message = resolveErrorMessage(error, "Falha ao salvar usuario.");
       set({
         saving: false,
         users: previousUsers,
         selectedUserId: currentUser?.id ?? null,
         form: buildFormState(currentUser),
-        feedback: resolveErrorMessage(error, "Falha ao salvar usuario."),
+        feedback: message,
       });
+      showErrorToast("Falha ao salvar usuario", message, { id: toastId });
+
+      return null;
     }
   },
 }));

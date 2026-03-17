@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { UserRole } from "@/domains/auth/domain/user-role";
 import { defaultPermissionsByRole } from "@/domains/auth/domain/user-role";
 import { prisma } from "@/core/database/prisma-client";
+import { AuditService } from "@/domains/audit/application/audit-service";
 import { DomainError } from "@/shared/kernel/domain-error";
 
 interface CreateUserInput {
@@ -23,6 +24,11 @@ interface UpdateUserInput {
   role?: UserRole;
   status?: "ACTIVE" | "INACTIVE";
   modulePermissions?: string[];
+}
+
+interface AuditActorContext {
+  userId: string;
+  ipAddress?: string | null;
 }
 
 function serializeAccessUser(
@@ -51,6 +57,8 @@ function serializeAccessUser(
 }
 
 export class AccessService {
+  constructor(private readonly auditService: AuditService) {}
+
   async listUsers(organizationId: string) {
     const users = await prisma.user.findMany({
       where: { organizationId },
@@ -71,7 +79,7 @@ export class AccessService {
     return users.map(serializeAccessUser);
   }
 
-  async createUser(input: CreateUserInput) {
+  async createUser(input: CreateUserInput, actor: AuditActorContext) {
     const existing = await prisma.user.findUnique({
       where: { email: input.email },
       select: { id: true },
@@ -114,10 +122,27 @@ export class AccessService {
       },
     });
 
+    await this.auditService.record({
+      organizationId: input.organizationId,
+      actorUserId: actor.userId,
+      action: "ACCESS_USER.CREATED",
+      entity: "User",
+      entityId: user.id,
+      ipAddress: actor.ipAddress ?? null,
+      metadata: {
+        after: serializeAccessUser(user),
+      },
+    });
+
     return serializeAccessUser(user);
   }
 
-  async updateUser(organizationId: string, userId: string, input: UpdateUserInput) {
+  async updateUser(
+    organizationId: string,
+    userId: string,
+    input: UpdateUserInput,
+    actor: AuditActorContext,
+  ) {
     const existing = await prisma.user.findFirst({
       where: {
         id: userId,
@@ -125,8 +150,12 @@ export class AccessService {
       },
       select: {
         id: true,
+        name: true,
         email: true,
         role: true,
+        status: true,
+        plantId: true,
+        modulePermissions: true,
       },
     });
 
@@ -173,7 +202,22 @@ export class AccessService {
         },
       });
 
-      return serializeAccessUser(user);
+      const serializedUser = serializeAccessUser(user);
+
+      await this.auditService.record({
+        organizationId,
+        actorUserId: actor.userId,
+        action: "ACCESS_USER.UPDATED",
+        entity: "User",
+        entityId: user.id,
+        ipAddress: actor.ipAddress ?? null,
+        metadata: {
+          before: serializeAccessUser(existing),
+          after: serializedUser,
+        },
+      });
+
+      return serializedUser;
     });
   }
 }

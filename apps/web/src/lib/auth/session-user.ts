@@ -7,6 +7,7 @@ export function toSessionUser(user: {
   role?: string | null;
   plantId?: string | null;
   status?: string | null;
+  modulePermissions?: string[] | null;
 }): SessionUser {
   return {
     id: user.id,
@@ -15,5 +16,6 @@ export function toSessionUser(user: {
     role: user.role ?? "ADMIN",
     plantId: user.plantId ?? null,
     status: user.status ?? "ACTIVE",
+    modulePermissions: user.modulePermissions ?? [],
   };
 }

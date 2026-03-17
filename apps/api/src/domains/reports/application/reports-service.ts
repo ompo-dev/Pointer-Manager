@@ -9,6 +9,9 @@ interface ReportFilters {
   to?: Date;
 }
 
+type ReportType = "hours-by-person" | "hours-by-plant" | "presence" | "overtime";
+type ReportRow = Record<string, string | number | null | undefined>;
+
 function calculateInclusiveDays(from: Date, to: Date) {
   const start = new Date(from);
   const end = new Date(to);
@@ -18,9 +21,6 @@ function calculateInclusiveDays(from: Date, to: Date) {
 
   return Math.max(1, Math.floor((end.getTime() - start.getTime()) / 86400000) + 1);
 }
-
-type ReportType = "hours-by-person" | "hours-by-plant" | "presence" | "overtime";
-type ReportRow = Record<string, string | number | null | undefined>;
 
 function formatPeriodLabel(filters: ReportFilters) {
   if (!filters.from && !filters.to) {
@@ -40,16 +40,25 @@ function truncatePdfText(value: string, maxLength: number) {
   return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
 }
 
-function buildReportWhere(filters: ReportFilters) {
+function buildEntryWhere(filters: ReportFilters) {
   return {
     organizationId: filters.organizationId,
     plantId: filters.plantId,
-    openedAt: filters.from || filters.to
-      ? {
-          gte: filters.from,
-          lte: filters.to,
-        }
-      : undefined,
+    openedAt:
+      filters.from || filters.to
+        ? {
+            gte: filters.from,
+            lte: filters.to,
+          }
+        : undefined,
+  };
+}
+
+function buildAccessProfileWhere(filters: ReportFilters) {
+  return {
+    organizationId: filters.organizationId,
+    status: "ACTIVE" as const,
+    homePlantId: filters.plantId,
   };
 }
 
@@ -187,15 +196,18 @@ export class ReportsService {
 
   async hoursByPerson(filters: ReportFilters) {
     const entries = await prisma.timeEntry.findMany({
-      where: buildReportWhere(filters),
+      where: buildEntryWhere(filters),
       include: {
-        employee: true,
-        plant: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
       },
     });
 
     const grouped = new Map<string, {
-      employeeId: string;
+      personId: string;
       fullName: string;
       cpf: string;
       employer: string;
@@ -204,18 +216,18 @@ export class ReportsService {
     }>();
 
     for (const entry of entries) {
-      const current = grouped.get(entry.employeeId) ?? {
-        employeeId: entry.employeeId,
-        fullName: entry.employee.fullName,
-        cpf: entry.employee.cpf,
-        employer: entry.employee.employer,
+      const current = grouped.get(entry.accessProfileId) ?? {
+        personId: entry.accessProfileId,
+        fullName: entry.accessProfile.person.fullName,
+        cpf: entry.accessProfile.person.cpf,
+        employer: entry.accessProfile.employer,
         totalMinutes: 0,
         records: 0,
       };
 
       current.totalMinutes += entry.totalMinutes ?? 0;
       current.records += 1;
-      grouped.set(entry.employeeId, current);
+      grouped.set(entry.accessProfileId, current);
     }
 
     return [...grouped.values()].sort((left, right) => right.totalMinutes - left.totalMinutes);
@@ -223,7 +235,7 @@ export class ReportsService {
 
   async hoursByPlant(filters: ReportFilters) {
     const entries = await prisma.timeEntry.findMany({
-      where: buildReportWhere(filters),
+      where: buildEntryWhere(filters),
       include: {
         plant: true,
       },
@@ -253,54 +265,64 @@ export class ReportsService {
   }
 
   async presence(filters: ReportFilters) {
-    const entries = await prisma.timeEntry.findMany({
-      where: buildReportWhere(filters),
-      include: {
-        employee: true,
-      },
-      orderBy: { openedAt: "desc" },
-    });
+    const [profiles, entries] = await Promise.all([
+      prisma.accessProfile.findMany({
+        where: buildAccessProfileWhere(filters),
+        include: {
+          person: true,
+        },
+        orderBy: {
+          person: {
+            fullName: "asc",
+          },
+        },
+      }),
+      prisma.timeEntry.findMany({
+        where: buildEntryWhere(filters),
+        include: {
+          accessProfile: {
+            include: {
+              person: true,
+            },
+          },
+        },
+      }),
+    ]);
 
-    const grouped = new Map<string, {
-      employeeId: string;
-      fullName: string;
-      cpf: string;
-      presentDays: Set<string>;
-      absences: number;
-    }>();
+    const grouped = new Map<string, Set<string>>();
 
     for (const entry of entries) {
       const dayKey = entry.openedAt.toISOString().slice(0, 10);
-      const current = grouped.get(entry.employeeId) ?? {
-        employeeId: entry.employeeId,
-        fullName: entry.employee.fullName,
-        cpf: entry.employee.cpf,
-        presentDays: new Set<string>(),
-        absences: 0,
-      };
-
-      current.presentDays.add(dayKey);
-      grouped.set(entry.employeeId, current);
+      const current = grouped.get(entry.accessProfileId) ?? new Set<string>();
+      current.add(dayKey);
+      grouped.set(entry.accessProfileId, current);
     }
 
     const totalPeriodDays =
       filters.from && filters.to ? calculateInclusiveDays(filters.from, filters.to) : null;
 
-    return [...grouped.values()].map((item) => ({
-      employeeId: item.employeeId,
-      fullName: item.fullName,
-      cpf: item.cpf,
-      presentDays: item.presentDays.size,
-      absences:
-        totalPeriodDays === null ? item.absences : Math.max(0, totalPeriodDays - item.presentDays.size),
-    }));
+    return profiles.map((profile) => {
+      const presentDays = grouped.get(profile.id)?.size ?? 0;
+
+      return {
+        personId: profile.id,
+        fullName: profile.person.fullName,
+        cpf: profile.person.cpf,
+        presentDays,
+        absences: totalPeriodDays === null ? 0 : Math.max(0, totalPeriodDays - presentDays),
+      };
+    });
   }
 
   async overtime(filters: ReportFilters) {
     const entries = await prisma.timeEntry.findMany({
-      where: buildReportWhere(filters),
+      where: buildEntryWhere(filters),
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
       },
     });
@@ -309,7 +331,7 @@ export class ReportsService {
       .filter((entry) => (entry.totalMinutes ?? 0) > 8 * 60)
       .map((entry) => ({
         entryId: entry.id,
-        fullName: entry.employee.fullName,
+        fullName: entry.accessProfile.person.fullName,
         plantName: entry.plant.name,
         totalMinutes: entry.totalMinutes ?? 0,
         extraMinutes: (entry.totalMinutes ?? 0) - 8 * 60,

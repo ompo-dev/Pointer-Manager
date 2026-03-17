@@ -24,8 +24,9 @@ export interface TestFixture {
   userId: string;
   userEmail: string;
   userPassword: string;
-  employeeId: string;
-  employeeCpf: string;
+  personId: string;
+  globalPersonId: string;
+  personCpf: string;
 }
 
 export async function createFixture(): Promise<TestFixture> {
@@ -85,12 +86,18 @@ export async function createFixture(): Promise<TestFixture> {
     },
   });
 
-  const employee = await prisma.employee.create({
+  const person = await prisma.person.create({
+    data: {
+      cpf: randomDigits(11),
+      fullName: `Person ${suffix}`,
+    },
+  });
+
+  const accessProfile = await prisma.accessProfile.create({
     data: {
       organizationId: organization.id,
-      primaryPlantId: plant.id,
-      fullName: `Employee ${suffix}`,
-      cpf: randomDigits(11),
+      personId: person.id,
+      homePlantId: plant.id,
       employer: "Solar Service",
       jobTitle: "Field Technician",
     },
@@ -106,8 +113,9 @@ export async function createFixture(): Promise<TestFixture> {
     userId: user.id,
     userEmail: user.email,
     userPassword,
-    employeeId: employee.id,
-    employeeCpf: employee.cpf,
+    personId: accessProfile.id,
+    globalPersonId: person.id,
+    personCpf: person.cpf,
   };
 }
 

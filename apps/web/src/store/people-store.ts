@@ -10,6 +10,11 @@ import {
   type PersonDetails,
 } from "@/lib/api/people";
 import { fetchPlants, type Plant } from "@/lib/api/plants";
+import {
+  showErrorToast,
+  showLoadingToast,
+  showSuccessToast,
+} from "@/lib/toast";
 import { createOptimisticId, resolveErrorMessage } from "@/store/store-utils";
 
 export interface PersonFormState {
@@ -24,7 +29,7 @@ export interface PersonFormState {
   photoUrl: string;
   notes: string;
   status: string;
-  primaryPlantId: string;
+  homePlantId: string;
 }
 
 export const emptyPersonForm: PersonFormState = {
@@ -38,7 +43,7 @@ export const emptyPersonForm: PersonFormState = {
   photoUrl: "",
   notes: "",
   status: "ACTIVE",
-  primaryPlantId: "",
+  homePlantId: "",
 };
 
 function buildPersonFormState(person?: PersonDetails | Person | null): PersonFormState {
@@ -58,7 +63,7 @@ function buildPersonFormState(person?: PersonDetails | Person | null): PersonFor
     photoUrl: person.photoUrl ?? "",
     notes: person.notes ?? "",
     status: person.status,
-    primaryPlantId: person.primaryPlantId ?? "",
+    homePlantId: person.homePlantId ?? "",
   };
 }
 
@@ -74,13 +79,14 @@ function buildPersonPayload(form: PersonFormState) {
     photoUrl: form.photoUrl || null,
     notes: form.notes || null,
     status: form.status,
-    primaryPlantId: form.primaryPlantId || null,
+    homePlantId: form.homePlantId || null,
   };
 }
 
 function buildOptimisticPerson(form: PersonFormState, id: string, current?: Person | PersonDetails | null): Person {
   return {
     id,
+    personId: current?.personId ?? id,
     fullName: form.fullName,
     cpf: form.cpf,
     personType: form.personType,
@@ -91,8 +97,8 @@ function buildOptimisticPerson(form: PersonFormState, id: string, current?: Pers
     photoUrl: form.photoUrl || null,
     notes: form.notes || null,
     status: form.status,
-    primaryPlantId: form.primaryPlantId || null,
-    primaryPlant: current?.primaryPlant ?? null,
+    homePlantId: form.homePlantId || null,
+    homePlant: current?.homePlant ?? null,
     _count: current?._count ?? {
       timeEntries: 0,
     },
@@ -143,10 +149,12 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
       const people = await fetchPeople(filters);
       set({ people, loadingList: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar as pessoas.");
       set({
         loadingList: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar as pessoas."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar pessoas", message);
     }
   },
   async loadPlantOptions() {
@@ -156,10 +164,12 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
       const plantOptions = await fetchPlants();
       set({ plantOptions, loadingPlantOptions: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar as usinas.");
       set({
         loadingPlantOptions: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar as usinas."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar usinas", message);
     }
   },
   async loadPerson(personId) {
@@ -182,10 +192,12 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
         loadingDetail: false,
       });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar a pessoa.");
       set({
         loadingDetail: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar a pessoa."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar pessoa", message);
     }
   },
   setSelectedPersonId(selectedPersonId) {
@@ -217,6 +229,12 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
     const optimisticPerson = buildOptimisticPerson(form, optimisticId, selectedPerson);
     const previousPeople = people;
     const previousSelectedPerson = selectedPerson;
+    const toastId = showLoadingToast(
+      form.id ? "Atualizando pessoa" : "Criando pessoa",
+      form.id
+        ? "Salvando as alteracoes do cadastro."
+        : "Preparando o novo cadastro de acesso.",
+    );
 
     set({
       saving: true,
@@ -254,17 +272,24 @@ export const usePeopleStore = create<PeopleStore>((set, get) => ({
           : null,
         form: buildPersonFormState(savedPerson),
       }));
+      showSuccessToast(
+        form.id ? "Pessoa atualizada" : "Pessoa criada",
+        "O cadastro foi salvo com sucesso.",
+        { id: toastId },
+      );
 
       return savedPerson.id;
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel salvar a pessoa.");
       set({
         saving: false,
         people: previousPeople,
         selectedPerson: previousSelectedPerson,
         selectedPersonId: previousSelectedPerson?.id ?? null,
         form: buildPersonFormState(previousSelectedPerson),
-        feedback: resolveErrorMessage(error, "Nao foi possivel salvar a pessoa."),
+        feedback: message,
       });
+      showErrorToast("Falha ao salvar pessoa", message, { id: toastId });
 
       return null;
     }

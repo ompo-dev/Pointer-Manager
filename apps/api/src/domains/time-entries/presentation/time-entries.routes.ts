@@ -60,7 +60,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
               : typeof query.plantId === "string"
                 ? query.plantId
                 : undefined,
-          employeeId: typeof query.employeeId === "string" ? query.employeeId : undefined,
+          personId: typeof query.personId === "string" ? query.personId : undefined,
           status: typeof query.status === "string" ? (query.status as never) : "ALL",
           search: typeof query.search === "string" ? query.search : undefined,
           from: parseDate(query.from),
@@ -110,15 +110,15 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     async ({ body, request, server, set }) => {
       try {
         return await appServices.timeEntries.getPublicNetworkStatus({
-          plantToken: body.plantToken,
+          plantToken: body.plantToken ?? undefined,
           deviceIp: readClientIp(request.headers, request, server),
-          wifiSsid: body.wifiSsid,
-          wifiBssid: body.wifiBssid,
+          wifiSsid: body.wifiSsid ?? undefined,
+          wifiBssid: body.wifiBssid ?? undefined,
           geoLatitude: body.geoLatitude,
           geoLongitude: body.geoLongitude,
           browserIpCandidates: body.browserIpCandidates,
-          networkType: body.networkType,
-          networkEffectiveType: body.networkEffectiveType,
+          networkType: body.networkType ?? undefined,
+          networkEffectiveType: body.networkEffectiveType ?? undefined,
         });
       } catch (error) {
         return handleDomainError(set, error);
@@ -126,15 +126,14 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     },
     {
       body: t.Object({
-        plantToken: t.Optional(t.String()),
-        plantId: t.Optional(t.String()),
-        wifiSsid: t.Optional(t.String()),
-        wifiBssid: t.Optional(t.String()),
+        plantToken: t.String(),
+        wifiSsid: t.Optional(t.Union([t.String(), t.Null()])),
+        wifiBssid: t.Optional(t.Union([t.String(), t.Null()])),
         geoLatitude: t.Optional(t.Number()),
         geoLongitude: t.Optional(t.Number()),
         browserIpCandidates: t.Optional(t.Array(t.String())),
-        networkType: t.Optional(t.String()),
-        networkEffectiveType: t.Optional(t.String()),
+        networkType: t.Optional(t.Union([t.String(), t.Null()])),
+        networkEffectiveType: t.Optional(t.Union([t.String(), t.Null()])),
       }),
       response: {
         200: accessNetworkStatusSchema,
@@ -146,7 +145,10 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     "/intake",
     async ({ body, set }) => {
       try {
-        return await appServices.timeEntries.getAccessIntakeContext(body);
+        return await appServices.timeEntries.getAccessIntakeContext({
+          cpf: body.cpf,
+          plantToken: body.plantToken ?? undefined,
+        });
       } catch (error) {
         return handleDomainError(set, error);
       }
@@ -154,8 +156,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     {
       body: t.Object({
         cpf: t.String({ minLength: 11 }),
-        plantToken: t.Optional(t.String()),
-        plantId: t.Optional(t.String()),
+        plantToken: t.String(),
       }),
       response: {
         200: accessIntakeSchema,
@@ -168,9 +169,26 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     async ({ body, request, server, set }) => {
       try {
         return await appServices.timeEntries.registerEntry({
-          ...body,
+          cpf: body.cpf,
+          plantToken: body.plantToken ?? undefined,
+          fullName: body.fullName ?? undefined,
+          employer: body.employer ?? undefined,
+          jobTitle: body.jobTitle ?? undefined,
           deviceIp: body.deviceIp ?? readClientIp(request.headers, request, server),
-          personType: parsePersonType(body.personType),
+          email: body.email ?? undefined,
+          phone: body.phone ?? undefined,
+          photoUrl: body.photoUrl ?? undefined,
+          notes: body.notes ?? undefined,
+          deviceLabel: body.deviceLabel ?? undefined,
+          wifiSsid: body.wifiSsid ?? undefined,
+          wifiBssid: body.wifiBssid ?? undefined,
+          selfieUrl: body.selfieUrl ?? undefined,
+          geoLatitude: body.geoLatitude,
+          geoLongitude: body.geoLongitude,
+          networkType: body.networkType ?? undefined,
+          networkEffectiveType: body.networkEffectiveType ?? undefined,
+          browserIpCandidates: body.browserIpCandidates,
+          personType: parsePersonType(body.personType ?? undefined),
         });
       } catch (error) {
         return handleDomainError(set, error);
@@ -179,25 +197,24 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     {
       body: t.Object({
         cpf: t.String({ minLength: 11 }),
-        plantToken: t.Optional(t.String()),
-        plantId: t.Optional(t.String()),
-        fullName: t.Optional(t.String()),
-        employer: t.Optional(t.String()),
-        jobTitle: t.Optional(t.String()),
-        personType: t.Optional(t.String()),
+        plantToken: t.String(),
+        fullName: t.Optional(t.Union([t.String(), t.Null()])),
+        employer: t.Optional(t.Union([t.String(), t.Null()])),
+        jobTitle: t.Optional(t.Union([t.String(), t.Null()])),
+        personType: t.Optional(t.Union([t.String(), t.Null()])),
         email: t.Optional(t.Union([t.String(), t.Null()])),
         phone: t.Optional(t.Union([t.String(), t.Null()])),
         photoUrl: t.Optional(t.Union([t.String(), t.Null()])),
         notes: t.Optional(t.Union([t.String(), t.Null()])),
-        deviceIp: t.Optional(t.String()),
-        deviceLabel: t.Optional(t.String()),
-        wifiSsid: t.Optional(t.String()),
-        wifiBssid: t.Optional(t.String()),
-        selfieUrl: t.Optional(t.String()),
+        deviceIp: t.Optional(t.Union([t.String(), t.Null()])),
+        deviceLabel: t.Optional(t.Union([t.String(), t.Null()])),
+        wifiSsid: t.Optional(t.Union([t.String(), t.Null()])),
+        wifiBssid: t.Optional(t.Union([t.String(), t.Null()])),
+        selfieUrl: t.Optional(t.Union([t.String(), t.Null()])),
         geoLatitude: t.Optional(t.Number()),
         geoLongitude: t.Optional(t.Number()),
-        networkType: t.Optional(t.String()),
-        networkEffectiveType: t.Optional(t.String()),
+        networkType: t.Optional(t.Union([t.String(), t.Null()])),
+        networkEffectiveType: t.Optional(t.Union([t.String(), t.Null()])),
         browserIpCandidates: t.Optional(t.Array(t.String())),
       }),
       response: {
@@ -211,8 +228,17 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     async ({ body, request, server, set }) => {
       try {
         return await appServices.timeEntries.registerExit({
-          ...body,
+          cpf: body.cpf,
+          plantToken: body.plantToken ?? undefined,
           deviceIp: body.deviceIp ?? readClientIp(request.headers, request, server),
+          wifiSsid: body.wifiSsid ?? undefined,
+          wifiBssid: body.wifiBssid ?? undefined,
+          selfieUrl: body.selfieUrl ?? undefined,
+          geoLatitude: body.geoLatitude,
+          geoLongitude: body.geoLongitude,
+          networkType: body.networkType ?? undefined,
+          networkEffectiveType: body.networkEffectiveType ?? undefined,
+          browserIpCandidates: body.browserIpCandidates,
         });
       } catch (error) {
         return handleDomainError(set, error);
@@ -221,16 +247,15 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     {
       body: t.Object({
         cpf: t.String({ minLength: 11 }),
-        plantToken: t.Optional(t.String()),
-        plantId: t.Optional(t.String()),
-        deviceIp: t.Optional(t.String()),
-        wifiSsid: t.Optional(t.String()),
-        wifiBssid: t.Optional(t.String()),
-        selfieUrl: t.Optional(t.String()),
+        plantToken: t.String(),
+        deviceIp: t.Optional(t.Union([t.String(), t.Null()])),
+        wifiSsid: t.Optional(t.Union([t.String(), t.Null()])),
+        wifiBssid: t.Optional(t.Union([t.String(), t.Null()])),
+        selfieUrl: t.Optional(t.Union([t.String(), t.Null()])),
         geoLatitude: t.Optional(t.Number()),
         geoLongitude: t.Optional(t.Number()),
-        networkType: t.Optional(t.String()),
-        networkEffectiveType: t.Optional(t.String()),
+        networkType: t.Optional(t.Union([t.String(), t.Null()])),
+        networkEffectiveType: t.Optional(t.Union([t.String(), t.Null()])),
         browserIpCandidates: t.Optional(t.Array(t.String())),
       }),
       response: {
@@ -241,7 +266,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
   )
   .post(
     "/:entryId/close",
-    async ({ headers, params, body, set }) => {
+    async ({ headers, params, body, request, server, set }) => {
       try {
         const user = await appServices.auth.requireUser(headers.authorization);
         appServices.auth.requireModuleAccess(user, "time-entries");
@@ -251,6 +276,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
           user,
           params.entryId,
           body.notes ?? undefined,
+          readClientIp(request.headers, request, server),
         );
       } catch (error) {
         return handleDomainError(set, error);
@@ -268,23 +294,28 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
   )
   .post(
     "/:entryId/adjust",
-    async ({ headers, params, body, set }) => {
+    async ({ headers, params, body, request, server, set }) => {
       try {
         const user = await appServices.auth.requireUser(headers.authorization);
         appServices.auth.requireModuleAccess(user, "time-entries");
         appServices.auth.requireRole(user, ["SUPER_ADMIN", "ADMIN", "PLANT_SUPERVISOR"]);
 
-        return await appServices.timeEntries.adjustEntry(user, params.entryId, {
-          openedAt: body.openedAt ? new Date(body.openedAt) : undefined,
-          closedAt:
-            body.closedAt === undefined
-              ? undefined
-              : body.closedAt === null
-                ? null
-                : new Date(body.closedAt),
-          notes: body.notes ?? undefined,
-          status: parseTimeEntryStatus(body.status),
-        });
+        return await appServices.timeEntries.adjustEntry(
+          user,
+          params.entryId,
+          {
+            openedAt: body.openedAt ? new Date(body.openedAt) : undefined,
+            closedAt:
+              body.closedAt === undefined
+                ? undefined
+                : body.closedAt === null
+                  ? null
+                  : new Date(body.closedAt),
+            notes: body.notes ?? undefined,
+            status: parseTimeEntryStatus(body.status),
+          },
+          readClientIp(request.headers, request, server),
+        );
       } catch (error) {
         return handleDomainError(set, error);
       }

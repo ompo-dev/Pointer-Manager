@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { fetchAuditLogs, type AuditLogEntry } from "@/lib/api/audit";
+import { showErrorToast } from "@/lib/toast";
 import { resolveErrorMessage } from "@/store/store-utils";
 
 interface AuditStore {
@@ -28,10 +29,12 @@ export const useAuditStore = create<AuditStore>((set) => ({
       const logs = await fetchAuditLogs(filters);
       set({ logs, loading: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar a auditoria.");
       set({
         loading: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar a auditoria."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar auditoria", message);
     }
   },
   clearFeedback() {

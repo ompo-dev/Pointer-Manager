@@ -34,10 +34,15 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
       try {
         const user = await appServices.auth.requireUser(headers.authorization);
         appServices.auth.requireModuleAccess(user, "plants");
+        const plantId =
+          user.role === "PLANT_SUPERVISOR" && user.plantId
+            ? user.plantId
+            : undefined;
 
         return await appServices.plants.list(user.organizationId, {
           search: typeof query.search === "string" ? query.search : undefined,
           status: typeof query.status === "string" ? (query.status as never) : "ALL",
+          plantId,
         });
       } catch (error) {
         return handleDomainError(set, error);
@@ -99,22 +104,6 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
     },
   )
   .get(
-    "/public/by-id/:plantId",
-    async ({ params, set }) => {
-      try {
-        return await appServices.plants.getPublicById(params.plantId);
-      } catch (error) {
-        return handleDomainError(set, error);
-      }
-    },
-    {
-      response: {
-        200: plantSchema,
-        ...commonErrorResponses,
-      },
-    },
-  )
-  .get(
     "/:plantId",
     async ({ headers, params, set }) => {
       try {
@@ -153,8 +142,9 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
           t.Object({
             id: t.String(),
             openedAt: t.String(),
-            employee: t.Object({
+            person: t.Object({
               id: t.String(),
+              personId: t.String(),
               fullName: t.String(),
               cpf: t.String(),
               personType: t.String(),
@@ -191,8 +181,9 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
             closedAt: t.Optional(t.Union([t.String(), t.Null()])),
             status: t.String(),
             totalMinutes: t.Optional(t.Union([t.Number(), t.Null()])),
-            employee: t.Object({
+            person: t.Object({
               id: t.String(),
+              personId: t.String(),
               fullName: t.String(),
               cpf: t.String(),
               personType: t.String(),
@@ -205,7 +196,7 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
   )
   .post(
     "/",
-    async ({ headers, body, set }) => {
+    async ({ headers, body, request, server, set }) => {
       try {
         const user = await appServices.auth.requireUser(headers.authorization);
         appServices.auth.requireModuleAccess(user, "plants");
@@ -230,6 +221,9 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
           geofenceLongitude: body.geofenceLongitude ?? undefined,
           geofenceRadiusMeters: body.geofenceRadiusMeters ?? undefined,
           authorizedNetworks: body.authorizedNetworks,
+        }, {
+          userId: user.id,
+          ipAddress: readClientIp(request.headers, request, server) ?? null,
         });
       } catch (error) {
         return handleDomainError(set, error);
@@ -237,7 +231,7 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
     },
     {
       body: t.Object({
-        code: t.String(),
+        code: t.Optional(t.String()),
         name: t.String(),
         city: t.String(),
         state: t.String(),
@@ -273,7 +267,7 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
   )
   .patch(
     "/:plantId",
-    async ({ headers, params, body, set }) => {
+    async ({ headers, params, body, request, server, set }) => {
       try {
         const user = await appServices.auth.requireUser(headers.authorization);
         appServices.auth.requireModuleAccess(user, "plants");
@@ -297,6 +291,9 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
           geofenceLongitude: body.geofenceLongitude ?? undefined,
           geofenceRadiusMeters: body.geofenceRadiusMeters ?? undefined,
           authorizedNetworks: body.authorizedNetworks,
+        }, {
+          userId: user.id,
+          ipAddress: readClientIp(request.headers, request, server) ?? null,
         });
       } catch (error) {
         return handleDomainError(set, error);

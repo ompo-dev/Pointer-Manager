@@ -5,7 +5,7 @@
  * API HTTP + tempo real para operação de ponto em usinas solares.
  * OpenAPI spec version: 1.0.0
  */
-import type { PostApiV1TimeEntriesExit200Employee } from './postApiV1TimeEntriesExit200Employee';
+import type { PostApiV1TimeEntriesExit200Person } from './postApiV1TimeEntriesExit200Person';
 import type { PostApiV1TimeEntriesExit200Plant } from './postApiV1TimeEntriesExit200Plant';
 import type { PostApiV1TimeEntriesExit200AdjustedByUser } from './postApiV1TimeEntriesExit200AdjustedByUser';
 
@@ -16,6 +16,7 @@ export type PostApiV1TimeEntriesExit200 = {
   closedAt?: string | null;
   /** @nullable */
   totalMinutes?: number | null;
+  elapsedMinutes: number;
   status: string;
   origin: string;
   /** @nullable */
@@ -40,7 +41,7 @@ export type PostApiV1TimeEntriesExit200 = {
   notes?: string | null;
   /** @nullable */
   closedReason?: string | null;
-  employee: PostApiV1TimeEntriesExit200Employee;
+  person: PostApiV1TimeEntriesExit200Person;
   plant: PostApiV1TimeEntriesExit200Plant;
   /** @nullable */
   adjustedByUser?: PostApiV1TimeEntriesExit200AdjustedByUser;

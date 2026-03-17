@@ -16,6 +16,13 @@ import {
   detectBrowserLocalIpv4Candidates,
   readBrowserConnectionProfile,
 } from "@/lib/network/local-network";
+import {
+  showErrorToast,
+  showInfoToast,
+  showLoadingToast,
+  showSuccessToast,
+  showWarningToast,
+} from "@/lib/toast";
 import { createOptimisticId, resolveErrorMessage } from "@/store/store-utils";
 
 export interface PlantAuthorizedNetworkForm {
@@ -204,13 +211,13 @@ function buildPlantFormState(plant?: PlantDetails | Plant | null): PlantFormStat
 
 function buildPlantPayload(form: PlantFormState) {
   return {
-    code: form.code,
+    code: form.code.trim() || undefined,
     name: form.name,
     city: form.city,
     state: form.state,
     openingHour: form.openingHour,
     closingHour: form.closingHour,
-    qrToken: form.qrToken,
+    qrToken: form.qrToken.trim() || undefined,
     requireWifiMatch: form.requireWifiMatch === "true",
     requireSelfie: form.requireSelfie === "true",
     autoCloseLimitHours: Number.parseInt(form.autoCloseLimitHours, 10),
@@ -300,16 +307,18 @@ function buildOptimisticPlant(
   id: string,
   current?: Plant | PlantDetails | null,
 ): Plant {
+  const generatedCode = current?.code ?? (form.code.trim() || `usina-${id.slice(-6)}`);
+
   return {
     id,
-    code: form.code,
+    code: generatedCode,
     name: form.name,
     city: form.city,
     state: form.state,
     timezone: current?.timezone ?? "America/Sao_Paulo",
     openingHour: form.openingHour,
     closingHour: form.closingHour,
-    qrToken: form.qrToken || `${form.code}-qr-token`,
+    qrToken: current?.qrToken ?? (form.qrToken.trim() || id),
     status: current?.status ?? "ACTIVE",
     requireWifiMatch: form.requireWifiMatch === "true",
     requireSelfie: form.requireSelfie === "true",
@@ -320,7 +329,7 @@ function buildOptimisticPlant(
     geofenceRadiusMeters: form.geofenceRadiusMeters ? Number(form.geofenceRadiusMeters) : null,
     authorizedNetworks: parseNetworks(form.authorizedNetworks),
     _count: current?._count ?? {
-      employees: 0,
+      people: 0,
       timeEntries: 0,
     },
   };
@@ -351,10 +360,10 @@ interface PlantsStore {
   ) => void;
   appendAuthorizedNetwork: (network?: Partial<PlantAuthorizedNetworkForm>) => void;
   removeAuthorizedNetwork: (index: number) => void;
-  detectCurrentNetwork: () => Promise<void>;
+  detectCurrentNetwork: (options?: { notify?: boolean }) => Promise<void>;
   setSelectedDetectedCandidateId: (candidateId: string | null) => void;
   applyDetectedNetwork: () => void;
-  detectCurrentLocation: () => Promise<void>;
+  detectCurrentLocation: (options?: { notify?: boolean }) => Promise<void>;
   applyDetectedLocation: () => void;
   resetForm: () => void;
   clearFeedback: () => void;
@@ -382,10 +391,12 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
       const plants = await fetchPlants(filters);
       set({ plants, loadingList: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar as usinas.");
       set({
         loadingList: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar as usinas."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar usinas", message);
     }
   },
   async loadPlant(plantId) {
@@ -414,10 +425,12 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
         detectedLocation: null,
       });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar a usina.");
       set({
         loadingDetail: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar a usina."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar usina", message);
     }
   },
   setSelectedPlantId(selectedPlantId) {
@@ -470,11 +483,18 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
       },
     }));
   },
-  async detectCurrentNetwork() {
+  async detectCurrentNetwork(options) {
     set({
       detectingNetwork: true,
       feedback: "Detectando a conexao atual...",
     });
+
+    const toastId = options?.notify
+      ? showLoadingToast(
+          "Detectando rede atual",
+          "Lendo a conexao ativa deste equipamento.",
+        )
+      : null;
 
     try {
       const browserIpCandidates = await detectBrowserLocalIpv4Candidates();
@@ -535,11 +555,34 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
             : detection.notes,
         };
       });
+      if (options?.notify) {
+        const detection = get().detectedNetwork;
+        const selectedCandidate =
+          detection?.candidates.find(
+            (candidate) => candidate.id === get().selectedDetectedCandidateId,
+          ) ??
+          detection?.candidates[0] ??
+          null;
+        const description =
+          selectedCandidate?.label ??
+          detection?.notes ??
+          "A rede atual foi verificada.";
+
+        showSuccessToast("Rede atual detectada", description, {
+          id: toastId ?? undefined,
+        });
+      }
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel detectar a rede atual.");
       set({
         detectingNetwork: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel detectar a rede atual."),
+        feedback: message,
       });
+      if (options?.notify) {
+        showErrorToast("Falha ao detectar rede", message, {
+          id: toastId ?? undefined,
+        });
+      }
     }
   },
   setSelectedDetectedCandidateId(selectedDetectedCandidateId) {
@@ -550,6 +593,10 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
 
     if (!detectedNetwork) {
       set({ feedback: "Detecte a conexao atual antes de adicionar a rede." });
+      showWarningToast(
+        "Detecte a rede primeiro",
+        "Atualize a deteccao antes de aplicar a configuracao.",
+      );
       return;
     }
 
@@ -561,6 +608,10 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
 
     if (!selectedCandidate) {
       set({ feedback: "Nenhuma interface de rede valida foi detectada para este equipamento." });
+      showWarningToast(
+        "Nenhuma interface valida",
+        "O equipamento nao informou uma interface de rede utilizavel.",
+      );
       return;
     }
 
@@ -569,6 +620,10 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
         feedback:
           "A interface detectada nao trouxe CIDR ou identificacao Wi-Fi suficiente para salvar a rede.",
       });
+      showWarningToast(
+        "Rede sem identificacao suficiente",
+        "A interface precisa informar CIDR, SSID ou BSSID para ser salva.",
+      );
       return;
     }
 
@@ -604,12 +659,32 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
             : "Rede selecionada adicionada a usina.",
       };
     });
+    const appliedCandidate = detectedNetwork.candidates.find(
+      (candidate) => candidate.id === selectedDetectedCandidateId,
+    );
+    const appliedName = appliedCandidate?.label ?? "Rede atual";
+
+    if (
+      get().feedback === "A rede atual ja esta na lista de redes autorizadas."
+    ) {
+      showInfoToast("Rede ja cadastrada", `${appliedName} ja estava autorizada.`);
+      return;
+    }
+
+    showSuccessToast("Rede aplicada", `${appliedName} foi adicionada a usina.`);
   },
-  async detectCurrentLocation() {
+  async detectCurrentLocation(options) {
     set({
       detectingLocation: true,
       feedback: "Detectando a localizacao atual...",
     });
+
+    const toastId = options?.notify
+      ? showLoadingToast(
+          "Capturando localizacao",
+          "Obtendo a posicao atual deste equipamento.",
+        )
+      : null;
 
     try {
       const location = await captureBrowserLocation();
@@ -620,6 +695,13 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
           detectedLocation: null,
           feedback: "Nao foi possivel capturar a localizacao atual do equipamento.",
         });
+        if (options?.notify) {
+          showWarningToast(
+            "Localizacao indisponivel",
+            "O navegador nao retornou uma posicao valida.",
+            { id: toastId ?? undefined },
+          );
+        }
         return;
       }
 
@@ -648,11 +730,26 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
           feedback: detectedLocation.notes,
         };
       });
+      if (options?.notify) {
+        const detectedLocation = get().detectedLocation;
+        const description = detectedLocation
+          ? `${detectedLocation.latitude.toFixed(6)}, ${detectedLocation.longitude.toFixed(6)}`
+          : "Posicao atual capturada.";
+        showSuccessToast("Localizacao atualizada", description, {
+          id: toastId ?? undefined,
+        });
+      }
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel detectar a localizacao atual.");
       set({
         detectingLocation: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel detectar a localizacao atual."),
+        feedback: message,
       });
+      if (options?.notify) {
+        showErrorToast("Falha ao capturar localizacao", message, {
+          id: toastId ?? undefined,
+        });
+      }
     }
   },
   applyDetectedLocation() {
@@ -660,6 +757,10 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
 
     if (!detectedLocation) {
       set({ feedback: "Detecte a localizacao atual antes de aplicar a geofence." });
+      showWarningToast(
+        "Detecte a localizacao primeiro",
+        "Capture a posicao atual antes de atualizar a geofence.",
+      );
       return;
     }
 
@@ -682,6 +783,10 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
       ),
       feedback: "Localizacao atual aplicada na geofence da usina.",
     }));
+    showSuccessToast(
+      "Geofence atualizada",
+      "A localizacao atual foi aplicada como referencia da usina.",
+    );
   },
   resetForm() {
     set({
@@ -704,6 +809,12 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
     const optimisticPlant = buildOptimisticPlant(form, optimisticId, selectedPlant);
     const previousPlants = plants;
     const previousSelectedPlant = selectedPlant;
+    const toastId = showLoadingToast(
+      form.id ? "Atualizando usina" : "Criando usina",
+      form.id
+        ? "Salvando as configuracoes operacionais."
+        : "Preparando a nova usina para o painel.",
+    );
 
     set({
       saving: true,
@@ -746,17 +857,24 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
               },
         form: buildPlantFormState(savedPlant),
       }));
+      showSuccessToast(
+        form.id ? "Usina atualizada" : "Usina criada",
+        "As configuracoes da usina foram salvas com sucesso.",
+        { id: toastId },
+      );
 
       return savedPlant.id;
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel salvar a usina.");
       set({
         saving: false,
         plants: previousPlants,
         selectedPlant: previousSelectedPlant,
         selectedPlantId: previousSelectedPlant?.id ?? null,
         form: buildPlantFormState(previousSelectedPlant),
-        feedback: resolveErrorMessage(error, "Nao foi possivel salvar a usina."),
+        feedback: message,
       });
+      showErrorToast("Falha ao salvar usina", message, { id: toastId });
 
       return null;
     }

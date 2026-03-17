@@ -5,10 +5,10 @@
  * API HTTP + tempo real para operação de ponto em usinas solares.
  * OpenAPI spec version: 1.0.0
  */
-import type { GetApiV1PlantsByPlantIdPresent200ItemEmployee } from './getApiV1PlantsByPlantIdPresent200ItemEmployee';
+import type { GetApiV1PlantsByPlantIdPresent200ItemPerson } from './getApiV1PlantsByPlantIdPresent200ItemPerson';
 
 export type GetApiV1PlantsByPlantIdPresent200Item = {
   id: string;
   openedAt: string;
-  employee: GetApiV1PlantsByPlantIdPresent200ItemEmployee;
+  person: GetApiV1PlantsByPlantIdPresent200ItemPerson;
 };

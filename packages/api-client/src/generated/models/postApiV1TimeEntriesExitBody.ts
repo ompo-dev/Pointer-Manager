@@ -10,13 +10,19 @@ export type PostApiV1TimeEntriesExitBody = {
   /** @minLength 11 */
   cpf: string;
   plantToken: string;
-  deviceIp?: string;
-  wifiSsid?: string;
-  wifiBssid?: string;
-  selfieUrl?: string;
+  /** @nullable */
+  deviceIp?: string | null;
+  /** @nullable */
+  wifiSsid?: string | null;
+  /** @nullable */
+  wifiBssid?: string | null;
+  /** @nullable */
+  selfieUrl?: string | null;
   geoLatitude?: number;
   geoLongitude?: number;
-  networkType?: string;
-  networkEffectiveType?: string;
+  /** @nullable */
+  networkType?: string | null;
+  /** @nullable */
+  networkEffectiveType?: string | null;
   browserIpCandidates?: string[];
 };

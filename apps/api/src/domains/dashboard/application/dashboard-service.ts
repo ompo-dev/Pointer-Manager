@@ -1,11 +1,15 @@
 import { prisma } from "@/core/database/prisma-client";
 
+function calculateElapsedMinutes(openedAt: Date) {
+  return Math.max(0, Math.round((Date.now() - openedAt.getTime()) / 60000));
+}
+
 export class DashboardService {
   async getOverview(organizationId: string, plantId?: string) {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const [openEntries, recordsToday, plantsOnline, liveEntries, closedTodayByPlant] =
+    const [openEntries, recordsToday, activityByPlantToday, liveEntries, closedTodayByPlant] =
       await Promise.all([
         prisma.timeEntry.findMany({
           where: {
@@ -14,7 +18,11 @@ export class DashboardService {
             status: "OPEN",
           },
           include: {
-            employee: true,
+            accessProfile: {
+              include: {
+                person: true,
+              },
+            },
             plant: true,
           },
           orderBy: { openedAt: "desc" },
@@ -28,10 +36,14 @@ export class DashboardService {
             },
           },
         }),
-        prisma.plant.count({
+        prisma.timeEntry.groupBy({
+          by: ["plantId"],
           where: {
             organizationId,
-            status: "ACTIVE",
+            plantId: plantId ?? undefined,
+            openedAt: {
+              gte: startOfToday,
+            },
           },
         }),
         prisma.timeEntry.findMany({
@@ -41,7 +53,11 @@ export class DashboardService {
             status: "OPEN",
           },
           include: {
-            employee: true,
+            accessProfile: {
+              include: {
+                person: true,
+              },
+            },
             plant: true,
           },
           orderBy: { openedAt: "desc" },
@@ -79,19 +95,18 @@ export class DashboardService {
       : [];
 
     const plantNames = new Map(plants.map((plant) => [plant.id, plant.name]));
-    const activePeople = new Set(openEntries.map((entry) => entry.employeeId)).size;
-    const now = Date.now();
+    const activePeople = new Set(openEntries.map((entry) => entry.accessProfileId)).size;
 
     const overtimeAlerts = openEntries
       .filter((entry) => {
         const lateMinutes = entry.plant.lateAlertMinutes;
-        return now - entry.openedAt.getTime() > lateMinutes * 60 * 1000;
+        return calculateElapsedMinutes(entry.openedAt) > lateMinutes;
       })
       .map((entry) => ({
         id: entry.id,
-        employeeName: entry.employee.fullName,
+        personName: entry.accessProfile.person.fullName,
         plantName: entry.plant.name,
-        minutesOpen: Math.round((now - entry.openedAt.getTime()) / 60000),
+        minutesOpen: calculateElapsedMinutes(entry.openedAt),
       }));
 
     const hoursByPlantToday = closedTodayByPlant.map((item) => ({
@@ -110,20 +125,21 @@ export class DashboardService {
     });
 
     return {
-      activeEmployees: activePeople,
+      activePeople,
       openEntries: openEntries.length,
       recordsToday,
-      plantsOnline,
-      employeesWithoutExit: openEntries.length,
+      plantsWithActivityToday: activityByPlantToday.length,
+      peopleWithoutExit: openEntries.length,
       hoursByPlantToday,
       presenceRanking,
       overtimeAlerts,
       liveEntries: liveEntries.map((entry) => ({
         id: entry.id,
-        employeeName: entry.employee.fullName,
-        personType: entry.employee.personType,
+        personName: entry.accessProfile.person.fullName,
+        personType: entry.accessProfile.personType,
         plantName: entry.plant.name,
         openedAt: entry.openedAt.toISOString(),
+        elapsedMinutes: calculateElapsedMinutes(entry.openedAt),
         status: entry.status,
       })),
     };

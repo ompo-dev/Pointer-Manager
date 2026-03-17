@@ -7,6 +7,6 @@
  */
 
 export type _PatchApiV1PlantsByPlantId200Count = {
-  employees: number;
+  people: number;
   timeEntries: number;
 };

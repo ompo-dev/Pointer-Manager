@@ -6,7 +6,7 @@ import { appServices } from "./shared/kernel/app-services";
 import { authRoutes } from "./domains/auth/presentation/auth.routes";
 import { accessRoutes } from "./domains/access/presentation/access.routes";
 import { plantsRoutes } from "./domains/plants/presentation/plants.routes";
-import { employeesRoutes } from "./domains/employees/presentation/employees.routes";
+import { peopleRoutes } from "./domains/people/presentation/people.routes";
 import { reportsRoutes } from "./domains/reports/presentation/reports.routes";
 import { timeEntriesRoutes } from "./domains/time-entries/presentation/time-entries.routes";
 import { dashboardRoutes } from "./domains/dashboard/presentation/dashboard.routes";
@@ -30,7 +30,7 @@ const api = new Elysia({ prefix: "/api/v1" })
   .use(authRoutes)
   .use(accessRoutes)
   .use(plantsRoutes)
-  .use(employeesRoutes)
+  .use(peopleRoutes)
   .use(reportsRoutes)
   .use(timeEntriesRoutes)
   .use(dashboardRoutes)
@@ -42,6 +42,9 @@ export const app = new Elysia()
     cors({
       origin: env.CORS_ORIGIN,
       credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+      methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      exposeHeaders: ["Content-Disposition", "Content-Type", "X-Exporter-IP"],
     }),
   )
   .use(
@@ -57,21 +60,4 @@ export const app = new Elysia()
       },
     }),
   )
-  .use(api)
-  .ws("/realtime", {
-    open(socket) {
-      appServices.operationsHub.connect(socket as never);
-      socket.send(
-        JSON.stringify({
-          type: "presence.snapshot",
-          payload: {
-            connected: true,
-          },
-          createdAt: new Date().toISOString(),
-        }),
-      );
-    },
-    close(socket) {
-      appServices.operationsHub.disconnect(socket as never);
-    },
-  });
+  .use(api);

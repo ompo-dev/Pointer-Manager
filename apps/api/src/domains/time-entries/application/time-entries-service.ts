@@ -1,18 +1,18 @@
-import { PersonType, Prisma, type TimeEntry, type TimeEntryStatus } from "@prisma/client";
+import { PersonType, Prisma, type EntryOrigin, type TimeEntryStatus } from "@prisma/client";
 import { prisma } from "@/core/database/prisma-client";
 import { OperationsHub } from "@/core/realtime/operations-hub";
-import { detectPlantNetwork } from "@/domains/plants/domain/network-detection";
 import { AuditService } from "@/domains/audit/application/audit-service";
+import type { AuthenticatedUser } from "@/domains/auth/application/auth-service";
+import { detectPlantNetwork } from "@/domains/plants/domain/network-detection";
 import {
   getAccessSubjectPolicy,
   listAccessSubjectPolicies,
   normalizeCpf,
   normalizeOptionalText,
 } from "@/domains/time-entries/domain/access-subject-policy";
-import type { AuthenticatedUser } from "@/domains/auth/application/auth-service";
 import {
-  evaluatePlantNetworkAccess,
   evaluatePlantLocationAccess,
+  evaluatePlantNetworkAccess,
   validatePlantAccess,
 } from "@/domains/time-entries/domain/access-validation";
 import { DomainError } from "@/shared/kernel/domain-error";
@@ -20,7 +20,7 @@ import { DomainError } from "@/shared/kernel/domain-error";
 interface ListEntriesFilters {
   organizationId: string;
   plantId?: string;
-  employeeId?: string;
+  personId?: string;
   status?: TimeEntryStatus | "ALL";
   search?: string;
   from?: Date;
@@ -30,10 +30,9 @@ interface ListEntriesFilters {
 interface RegisterEntryInput {
   cpf: string;
   plantToken?: string | null;
-  plantId?: string | null;
-  fullName?: string;
-  employer?: string;
-  jobTitle?: string;
+  fullName?: string | null;
+  employer?: string | null;
+  jobTitle?: string | null;
   personType?: PersonType;
   email?: string | null;
   phone?: string | null;
@@ -54,7 +53,6 @@ interface RegisterEntryInput {
 interface RegisterExitInput {
   cpf: string;
   plantToken?: string | null;
-  plantId?: string | null;
   deviceIp?: string | null;
   wifiSsid?: string | null;
   wifiBssid?: string | null;
@@ -73,15 +71,60 @@ interface AdjustEntryInput {
   status?: TimeEntryStatus;
 }
 
-interface AccessPersonSnapshot {
+type AccessProfileSnapshot = {
   id: string;
-  fullName: string;
-  cpf: string;
-  personType: string;
+  personId: string;
+  organizationId: string;
+  personType: PersonType;
   employer: string;
   jobTitle: string;
+  email: string | null;
+  phone: string | null;
+  photoUrl: string | null;
+  notes: string | null;
   status: string;
-}
+  person: {
+    id: string;
+    fullName: string;
+    cpf: string;
+  };
+};
+
+type TimeEntryRecord = {
+  id: string;
+  organizationId: string;
+  accessProfileId: string;
+  plantId: string;
+  openedAt: Date;
+  closedAt: Date | null;
+  totalMinutes: number | null;
+  status: string;
+  origin: EntryOrigin;
+  deviceIp: string | null;
+  deviceLabel: string | null;
+  wifiSsid: string | null;
+  wifiBssid: string | null;
+  selfieUrl: string | null;
+  geoLatitude: number | null;
+  geoLongitude: number | null;
+  validationMode: string | null;
+  validationNotes: string | null;
+  notes: string | null;
+  closedReason: string | null;
+  adjustedByUserId: string | null;
+  accessProfile: AccessProfileSnapshot;
+  plant: {
+    id: string;
+    name: string;
+    city: string;
+    state: string;
+  };
+  adjustedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+};
 
 type PublicDeviceResolutionInput = Pick<
   RegisterEntryInput,
@@ -92,50 +135,72 @@ type PublicDeviceResolutionInput = Pick<
   | "networkType"
 >;
 
-type PublicPlantReference = {
-  plantId?: string | null;
-  plantToken?: string | null;
-};
-
 function isLoopbackIp(value?: string | null) {
   return value === "127.0.0.1" || value === "::1";
+}
+
+function calculateElapsedMinutes(openedAt: Date, totalMinutes?: number | null, closedAt?: Date | null) {
+  if (typeof totalMinutes === "number") {
+    return totalMinutes;
+  }
+
+  const end = closedAt ?? new Date();
+  return Math.max(0, Math.round((end.getTime() - openedAt.getTime()) / 60000));
 }
 
 function buildEntrySearchFilters(filters: ListEntriesFilters): Prisma.TimeEntryWhereInput {
   return {
     organizationId: filters.organizationId,
     plantId: filters.plantId,
-    employeeId: filters.employeeId,
+    accessProfileId: filters.personId,
     status:
       filters.status && filters.status !== "ALL"
         ? filters.status
         : undefined,
-    openedAt: filters.from || filters.to
-      ? {
-          gte: filters.from,
-          lte: filters.to,
-        }
-      : undefined,
+    openedAt:
+      filters.from || filters.to
+        ? {
+            gte: filters.from,
+            lte: filters.to,
+          }
+        : undefined,
     OR: filters.search
       ? [
           {
-            employee: {
+            accessProfile: {
               is: {
-                fullName: { contains: filters.search, mode: "insensitive" },
+                person: {
+                  is: {
+                    fullName: {
+                      contains: filters.search,
+                      mode: "insensitive",
+                    },
+                  },
+                },
               },
             },
           },
           {
-            employee: {
+            accessProfile: {
               is: {
-                cpf: { contains: filters.search, mode: "insensitive" },
+                person: {
+                  is: {
+                    cpf: {
+                      contains: filters.search,
+                      mode: "insensitive",
+                    },
+                  },
+                },
               },
             },
           },
           {
             plant: {
               is: {
-                name: { contains: filters.search, mode: "insensitive" },
+                name: {
+                  contains: filters.search,
+                  mode: "insensitive",
+                },
               },
             },
           },
@@ -161,44 +226,49 @@ function buildValidationNotes(
   return evidence.length > 0 ? `${validationNote} [${evidence.join(", ")}]` : validationNote;
 }
 
-function serializeAccessPerson(person: AccessPersonSnapshot) {
+function resolveOptionalProfileField(value: string | null | undefined, fallback?: string | null) {
+  if (value === undefined) {
+    return fallback ?? undefined;
+  }
+
+  return normalizeOptionalText(value) ?? null;
+}
+
+function serializeAccessPerson(accessProfile: AccessProfileSnapshot) {
   return {
-    id: person.id,
-    fullName: person.fullName,
-    cpf: person.cpf,
-    personType: person.personType,
-    employer: person.employer,
-    jobTitle: person.jobTitle,
-    status: person.status,
+    id: accessProfile.id,
+    personId: accessProfile.person.id,
+    fullName: accessProfile.person.fullName,
+    cpf: accessProfile.person.cpf,
+    personType: accessProfile.personType,
+    employer: accessProfile.employer,
+    jobTitle: accessProfile.jobTitle,
+    status: accessProfile.status,
   };
 }
 
-function serializeTimeEntry(
-  entry: TimeEntry & {
-    employee: {
-      id: string;
-      fullName: string;
-      cpf: string;
-      personType: string;
-      employer: string;
-    };
-    plant: {
-      id: string;
-      name: string;
-      city: string;
-      state: string;
-    };
-    adjustedByUser?: {
-      id: string;
-      name: string;
-      email: string;
-    } | null;
-  },
-) {
+function serializeTimeEntry(entry: TimeEntryRecord) {
   return {
-    ...entry,
+    id: entry.id,
     openedAt: entry.openedAt.toISOString(),
     closedAt: entry.closedAt?.toISOString() ?? null,
+    totalMinutes: entry.totalMinutes,
+    elapsedMinutes: calculateElapsedMinutes(entry.openedAt, entry.totalMinutes, entry.closedAt),
+    status: entry.status,
+    origin: entry.origin,
+    deviceIp: entry.deviceIp,
+    deviceLabel: entry.deviceLabel,
+    wifiSsid: entry.wifiSsid,
+    wifiBssid: entry.wifiBssid,
+    selfieUrl: entry.selfieUrl,
+    geoLatitude: entry.geoLatitude,
+    geoLongitude: entry.geoLongitude,
+    validationMode: entry.validationMode,
+    validationNotes: entry.validationNotes,
+    notes: entry.notes,
+    closedReason: entry.closedReason,
+    person: serializeAccessPerson(entry.accessProfile),
+    plant: entry.plant,
     adjustedByUser: entry.adjustedByUser ?? null,
   };
 }
@@ -235,57 +305,67 @@ export class TimeEntriesService {
     };
   }
 
-  private async resolvePublicPlant(reference: PublicPlantReference) {
-    if (reference.plantId) {
-      return await prisma.plant.findUnique({
-        where: { id: reference.plantId },
-        include: {
-          authorizedNetworks: true,
-        },
-      });
+  private async resolvePublicPlant(reference: { plantToken?: string | null }) {
+    if (!reference.plantToken?.trim()) {
+      throw new DomainError("QRCode da usina nao informado.", 422);
     }
 
-    if (reference.plantToken) {
-      return await prisma.plant.findUnique({
-        where: { qrToken: reference.plantToken },
-        include: {
-          authorizedNetworks: true,
-        },
-      });
-    }
-
-    throw new DomainError("Identificador publico da usina nao informado.", 422);
+    return prisma.plant.findUnique({
+      where: { qrToken: reference.plantToken.trim() },
+      include: {
+        authorizedNetworks: true,
+      },
+    });
   }
 
   private async publishOperationalEvent(
     type: "entry.created" | "entry.closed" | "entry.adjusted",
-    entry: {
-      id: string;
-      organizationId: string;
-      plantId: string;
-      openedAt?: Date;
-      totalMinutes?: number | null;
-      status?: string;
-      employee: { fullName: string };
-      plant: { name: string };
+    entry: Pick<
+      TimeEntryRecord,
+      "id" | "organizationId" | "plantId" | "openedAt" | "closedAt" | "totalMinutes" | "status"
+    > & {
+      accessProfile: {
+        personType: PersonType;
+        person: {
+          fullName: string;
+        };
+      };
+      plant: {
+        name: string;
+      };
     },
   ) {
     const payload =
       type === "entry.closed"
         ? {
             entryId: entry.id,
-            personName: entry.employee.fullName,
+            personName: entry.accessProfile.person.fullName,
+            personType: entry.accessProfile.personType,
             plantName: entry.plant.name,
             totalMinutes: entry.totalMinutes ?? 0,
             status: entry.status ?? "CLOSED",
+            closedAt: entry.closedAt?.toISOString() ?? new Date().toISOString(),
           }
-        : {
-            entryId: entry.id,
-            personName: entry.employee.fullName,
-            plantName: entry.plant.name,
-            openedAt: entry.openedAt?.toISOString(),
-            status: entry.status ?? "OPEN",
-          };
+        : type === "entry.adjusted"
+          ? {
+              entryId: entry.id,
+              personName: entry.accessProfile.person.fullName,
+              personType: entry.accessProfile.personType,
+              plantName: entry.plant.name,
+              openedAt: entry.openedAt?.toISOString(),
+              closedAt: entry.closedAt?.toISOString() ?? null,
+              totalMinutes: entry.totalMinutes ?? null,
+              status: entry.status ?? "ADJUSTED",
+              isCurrentlyOpen: entry.status === "OPEN",
+            }
+          : {
+              entryId: entry.id,
+              personName: entry.accessProfile.person.fullName,
+              personType: entry.accessProfile.personType,
+              plantName: entry.plant.name,
+              openedAt: entry.openedAt?.toISOString(),
+              status: entry.status ?? "OPEN",
+            };
 
     await prisma.realtimeEvent.create({
       data: {
@@ -308,14 +388,14 @@ export class TimeEntriesService {
   private buildNormalizedPersonData(
     input: RegisterEntryInput,
     existing?: {
-      fullName: string;
-      employer: string;
-      jobTitle: string;
-      personType: PersonType;
-      email: string | null;
-      phone: string | null;
-      photoUrl: string | null;
-      notes: string | null;
+      fullName?: string;
+      personType?: PersonType;
+      employer?: string;
+      jobTitle?: string;
+      email?: string | null;
+      phone?: string | null;
+      photoUrl?: string | null;
+      notes?: string | null;
     },
   ) {
     const personType = input.personType ?? existing?.personType ?? "VISITOR";
@@ -331,10 +411,10 @@ export class TimeEntriesService {
         existing?.jobTitle ??
         policy.defaults.jobTitle,
       personType,
-      email: normalizeOptionalText(input.email) ?? existing?.email ?? undefined,
-      phone: normalizeOptionalText(input.phone) ?? existing?.phone ?? undefined,
-      photoUrl: normalizeOptionalText(input.photoUrl) ?? existing?.photoUrl ?? undefined,
-      notes: normalizeOptionalText(input.notes) ?? existing?.notes ?? undefined,
+      email: resolveOptionalProfileField(input.email, existing?.email),
+      phone: resolveOptionalProfileField(input.phone, existing?.phone),
+      photoUrl: resolveOptionalProfileField(input.photoUrl, existing?.photoUrl),
+      notes: resolveOptionalProfileField(input.notes, existing?.notes),
     };
 
     const missingFields = policy.requiredFields.filter((field) => {
@@ -359,83 +439,148 @@ export class TimeEntriesService {
     return normalized;
   }
 
-  private async ensurePersonForAccess(input: RegisterEntryInput, organizationId: string, plantId: string) {
-    const normalizedCpf = normalizeCpf(input.cpf);
-    if (normalizedCpf.length !== 11) {
-      throw new DomainError("Informe um CPF valido para registrar o acesso.", 422);
-    }
-
-    const existing = await prisma.employee.findUnique({
-      where: { cpf: normalizedCpf },
-    });
-
-    const normalizedPersonData = this.buildNormalizedPersonData(
-      {
-        ...input,
-        cpf: normalizedCpf,
-      },
-      existing
-        ? {
-            fullName: existing.fullName,
-            employer: existing.employer,
-            jobTitle: existing.jobTitle,
-            personType: existing.personType,
-            email: existing.email,
-            phone: existing.phone,
-            photoUrl: existing.photoUrl,
-            notes: existing.notes,
-          }
-        : undefined,
-    );
-
-    if (existing) {
-      return prisma.employee.update({
-        where: { id: existing.id },
-        data: {
-          primaryPlantId: existing.primaryPlantId ?? plantId,
-          fullName: normalizedPersonData.fullName ?? existing.fullName,
-          employer: normalizedPersonData.employer ?? existing.employer,
-          jobTitle: normalizedPersonData.jobTitle ?? existing.jobTitle,
-          personType: normalizedPersonData.personType ?? existing.personType,
-          email: input.email === undefined ? existing.email : normalizedPersonData.email ?? null,
-          phone: input.phone === undefined ? existing.phone : normalizedPersonData.phone ?? null,
-          photoUrl: input.photoUrl === undefined ? existing.photoUrl : normalizedPersonData.photoUrl ?? null,
-          notes: input.notes === undefined ? existing.notes : normalizedPersonData.notes ?? null,
-          status: existing.status === "INACTIVE" ? "ACTIVE" : existing.status,
-        },
-      });
-    }
-
-    return prisma.employee.create({
-      data: {
+  private async resolveScopedAccessProfileByCpf(
+    organizationId: string,
+    cpf: string,
+  ) {
+    return prisma.accessProfile.findFirst({
+      where: {
         organizationId,
-        primaryPlantId: plantId,
-        fullName: normalizedPersonData.fullName!,
-        cpf: normalizedCpf,
-        employer: normalizedPersonData.employer,
-        jobTitle: normalizedPersonData.jobTitle,
-        personType: normalizedPersonData.personType,
-        email: normalizedPersonData.email ?? null,
-        phone: normalizedPersonData.phone ?? null,
-        photoUrl: normalizedPersonData.photoUrl ?? null,
-        notes: normalizedPersonData.notes ?? null,
-        status: "ACTIVE",
+        person: {
+          is: {
+            cpf,
+          },
+        },
+      },
+      include: {
+        person: true,
       },
     });
   }
 
-  private async finalizeEntry(
-    entry: TimeEntry & {
-      employee: { fullName: string };
-      plant: { name: string };
+  private async ensureAccessProfileForAccess(
+    input: RegisterEntryInput,
+    plant: {
+      id: string;
+      organizationId: string;
     },
+  ) {
+    const normalizedCpf = normalizeCpf(input.cpf);
+
+    if (normalizedCpf.length !== 11) {
+      throw new DomainError("Informe um CPF valido para registrar o acesso.", 422);
+    }
+
+    return prisma.$transaction(async (transaction) => {
+      const existingPerson = await transaction.person.findUnique({
+        where: { cpf: normalizedCpf },
+      });
+
+      const existingAccessProfile = existingPerson
+        ? await transaction.accessProfile.findFirst({
+            where: {
+              organizationId: plant.organizationId,
+              personId: existingPerson.id,
+            },
+            include: {
+              person: true,
+            },
+          })
+        : null;
+
+      const normalizedPersonData = this.buildNormalizedPersonData(
+        {
+          ...input,
+          cpf: normalizedCpf,
+        },
+        {
+          fullName: existingPerson?.fullName,
+          personType: existingAccessProfile?.personType,
+          employer: existingAccessProfile?.employer,
+          jobTitle: existingAccessProfile?.jobTitle,
+          email: existingAccessProfile?.email,
+          phone: existingAccessProfile?.phone,
+          photoUrl: existingAccessProfile?.photoUrl,
+          notes: existingAccessProfile?.notes,
+        },
+      );
+
+      const person = existingPerson
+        ? await transaction.person.update({
+            where: { id: existingPerson.id },
+            data: {
+              fullName: normalizedPersonData.fullName!,
+            },
+          })
+        : await transaction.person.create({
+            data: {
+              cpf: normalizedCpf,
+              fullName: normalizedPersonData.fullName!,
+            },
+          });
+
+      if (existingAccessProfile) {
+        return transaction.accessProfile.update({
+          where: { id: existingAccessProfile.id },
+          data: {
+            homePlantId: existingAccessProfile.homePlantId ?? plant.id,
+            personType: normalizedPersonData.personType,
+            employer: normalizedPersonData.employer!,
+            jobTitle: normalizedPersonData.jobTitle!,
+            email:
+              normalizedPersonData.email === undefined
+                ? existingAccessProfile.email
+                : normalizedPersonData.email,
+            phone:
+              normalizedPersonData.phone === undefined
+                ? existingAccessProfile.phone
+                : normalizedPersonData.phone,
+            photoUrl:
+              normalizedPersonData.photoUrl === undefined
+                ? existingAccessProfile.photoUrl
+                : normalizedPersonData.photoUrl,
+            notes:
+              normalizedPersonData.notes === undefined
+                ? existingAccessProfile.notes
+                : normalizedPersonData.notes,
+            status: existingAccessProfile.status === "INACTIVE" ? "ACTIVE" : existingAccessProfile.status,
+          },
+          include: {
+            person: true,
+          },
+        });
+      }
+
+      return transaction.accessProfile.create({
+        data: {
+          organizationId: plant.organizationId,
+          personId: person.id,
+          homePlantId: plant.id,
+          personType: normalizedPersonData.personType,
+          employer: normalizedPersonData.employer!,
+          jobTitle: normalizedPersonData.jobTitle!,
+          email: normalizedPersonData.email ?? null,
+          phone: normalizedPersonData.phone ?? null,
+          photoUrl: normalizedPersonData.photoUrl ?? null,
+          notes: normalizedPersonData.notes ?? null,
+          status: "ACTIVE",
+        },
+        include: {
+          person: true,
+        },
+      });
+    });
+  }
+
+  private async finalizeEntry(
+    entry: TimeEntryRecord,
     data: {
       status: TimeEntryStatus;
       deviceIp?: string | null;
       closedReason: string;
       notes?: string | null;
       adjustedByUserId?: string | null;
-      origin?: "QR_CODE" | "PANEL" | "MANUAL_ADJUSTMENT" | "AUTO_CLOSED";
+      origin?: EntryOrigin;
       action: string;
       actorUserId?: string | null;
       ipAddress?: string | null;
@@ -460,8 +605,19 @@ export class TimeEntriesService {
         origin: data.origin ?? entry.origin,
       },
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
+        adjustedByUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -473,7 +629,8 @@ export class TimeEntriesService {
       entityId: updated.id,
       ipAddress: data.ipAddress ?? null,
       metadata: {
-        employeeId: updated.employeeId,
+        accessProfileId: updated.accessProfileId,
+        personId: updated.accessProfile.person.id,
         plantId: updated.plantId,
         totalMinutes,
         closedReason: data.closedReason,
@@ -493,7 +650,11 @@ export class TimeEntriesService {
         status: "OPEN",
       },
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
       },
       orderBy: { openedAt: "asc" },
@@ -533,7 +694,11 @@ export class TimeEntriesService {
     const entries = await prisma.timeEntry.findMany({
       where: buildEntrySearchFilters(filters),
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
         adjustedByUser: {
           select: {
@@ -560,7 +725,11 @@ export class TimeEntriesService {
         status: "OPEN",
       },
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
       },
       orderBy: { openedAt: "desc" },
@@ -569,8 +738,9 @@ export class TimeEntriesService {
     return entries.map(serializeTimeEntry);
   }
 
-  async getAccessIntakeContext(input: { cpf: string; plantToken?: string | null; plantId?: string | null }) {
+  async getAccessIntakeContext(input: { cpf: string; plantToken?: string | null }) {
     const normalizedCpf = normalizeCpf(input.cpf);
+
     if (normalizedCpf.length !== 11) {
       throw new DomainError("Informe um CPF valido para consultar o acesso.", 422);
     }
@@ -581,14 +751,15 @@ export class TimeEntriesService {
       throw new DomainError("Usina indisponivel para registros.", 404);
     }
 
-    const person = await prisma.employee.findUnique({
-      where: { cpf: normalizedCpf },
-    });
+    const accessProfile = await this.resolveScopedAccessProfileByCpf(
+      plant.organizationId,
+      normalizedCpf,
+    );
 
-    const openEntry = person
+    const openEntry = accessProfile
       ? await prisma.timeEntry.findFirst({
           where: {
-            employeeId: person.id,
+            accessProfileId: accessProfile.id,
             status: "OPEN",
           },
           include: {
@@ -630,7 +801,7 @@ export class TimeEntriesService {
           plant.geofenceLongitude !== null &&
           plant.geofenceRadiusMeters !== null,
       },
-      person: person ? serializeAccessPerson(person) : null,
+      person: accessProfile ? serializeAccessPerson(accessProfile) : null,
       openEntry: openEntry
         ? {
             id: openEntry.id,
@@ -648,7 +819,6 @@ export class TimeEntriesService {
 
   async getPublicNetworkStatus(input: {
     plantToken?: string | null;
-    plantId?: string | null;
     deviceIp?: string | null;
     wifiSsid?: string | null;
     wifiBssid?: string | null;
@@ -698,7 +868,10 @@ export class TimeEntriesService {
         browserHintIgnored: evaluation.browserHintIgnored,
       },
       location,
-      ready: evaluation.status !== "BLOCKED" && location.status !== "BLOCKED" && location.status !== "PENDING",
+      ready:
+        evaluation.status !== "BLOCKED" &&
+        location.status !== "BLOCKED" &&
+        location.status !== "PENDING",
     };
   }
 
@@ -710,6 +883,7 @@ export class TimeEntriesService {
     }
 
     const normalizedCpf = normalizeCpf(input.cpf);
+
     if (normalizedCpf.length !== 11) {
       throw new DomainError("Informe um CPF valido para registrar o acesso.", 422);
     }
@@ -721,27 +895,27 @@ export class TimeEntriesService {
       wifiSsid: deviceContext.wifiSsid,
       wifiBssid: deviceContext.wifiBssid,
     });
+
     if (!validation.valid) {
       throw new DomainError(validation.notes, 403);
     }
-    const validationNotes = buildValidationNotes(validation.notes, input);
 
-    const person = await this.ensurePersonForAccess(
+    const validationNotes = buildValidationNotes(validation.notes, input);
+    const accessProfile = await this.ensureAccessProfileForAccess(
       {
         ...input,
         cpf: normalizedCpf,
       },
-      plant.organizationId,
-      plant.id,
+      plant,
     );
 
-    if (person.status !== "ACTIVE") {
+    if (accessProfile.status !== "ACTIVE") {
       throw new DomainError("Pessoa sem autorizacao para entrada.", 403);
     }
 
     const hasOpenEntry = await prisma.timeEntry.findFirst({
       where: {
-        employeeId: person.id,
+        accessProfileId: accessProfile.id,
         status: "OPEN",
       },
     });
@@ -753,23 +927,34 @@ export class TimeEntriesService {
     const entry = await prisma.timeEntry.create({
       data: {
         organizationId: plant.organizationId,
-        employeeId: person.id,
+        accessProfileId: accessProfile.id,
         plantId: plant.id,
         origin: "QR_CODE",
         deviceIp: deviceContext.deviceIp ?? null,
-        deviceLabel: input.deviceLabel ?? null,
+        deviceLabel: normalizeOptionalText(input.deviceLabel) ?? null,
         wifiSsid: deviceContext.wifiSsid ?? null,
         wifiBssid: deviceContext.wifiBssid ?? null,
-        selfieUrl: input.selfieUrl ?? null,
+        selfieUrl: normalizeOptionalText(input.selfieUrl) ?? null,
         geoLatitude: input.geoLatitude ?? null,
         geoLongitude: input.geoLongitude ?? null,
         validationMode: validation.mode,
         validationNotes,
-        notes: input.notes ?? null,
+        notes: normalizeOptionalText(input.notes) ?? null,
       },
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
+        adjustedByUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -780,9 +965,10 @@ export class TimeEntriesService {
       entityId: entry.id,
       ipAddress: deviceContext.deviceIp ?? null,
       metadata: {
-        employeeId: person.id,
+        accessProfileId: accessProfile.id,
+        personId: accessProfile.person.id,
         plantId: plant.id,
-        personType: person.personType,
+        personType: accessProfile.personType,
         validationMode: validation.mode,
         validationNotes,
         networkType: input.networkType ?? null,
@@ -798,11 +984,12 @@ export class TimeEntriesService {
   async registerExit(input: RegisterExitInput) {
     const plant = await this.resolvePublicPlant(input);
 
-    if (!plant) {
-      throw new DomainError("Usina nao encontrada para este token.", 404);
+    if (!plant || plant.status !== "ACTIVE") {
+      throw new DomainError("Usina indisponivel para registros.", 404);
     }
 
     const normalizedCpf = normalizeCpf(input.cpf);
+
     if (normalizedCpf.length !== 11) {
       throw new DomainError("Informe um CPF valido para registrar a saida.", 422);
     }
@@ -814,28 +1001,41 @@ export class TimeEntriesService {
       wifiSsid: deviceContext.wifiSsid,
       wifiBssid: deviceContext.wifiBssid,
     });
+
     if (!validation.valid) {
       throw new DomainError(validation.notes, 403);
     }
+
     const validationNotes = buildValidationNotes(validation.notes, input);
+    const accessProfile = await this.resolveScopedAccessProfileByCpf(
+      plant.organizationId,
+      normalizedCpf,
+    );
 
-    const person = await prisma.employee.findUnique({
-      where: { cpf: normalizedCpf },
-    });
-
-    if (!person) {
+    if (!accessProfile) {
       throw new DomainError("Pessoa nao encontrada.", 404);
     }
 
     const entry = await prisma.timeEntry.findFirst({
       where: {
-        employeeId: person.id,
+        accessProfileId: accessProfile.id,
         plantId: plant.id,
         status: "OPEN",
       },
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
+        adjustedByUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -853,15 +1053,32 @@ export class TimeEntriesService {
     });
   }
 
-  async closeManually(user: AuthenticatedUser, entryId: string, notes?: string) {
+  async closeManually(
+    user: AuthenticatedUser,
+    entryId: string,
+    notes?: string,
+    ipAddress?: string | null,
+  ) {
     const entry = await prisma.timeEntry.findFirst({
       where: {
         id: entryId,
         organizationId: user.organizationId,
+        plantId: user.role === "PLANT_SUPERVISOR" ? user.plantId ?? undefined : undefined,
       },
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
+        adjustedByUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -881,18 +1098,36 @@ export class TimeEntriesService {
       adjustedByUserId: user.id,
       notes: notes ?? "Registro encerrado manualmente pelo painel.",
       origin: "PANEL",
+      ipAddress: ipAddress ?? null,
     });
   }
 
-  async adjustEntry(user: AuthenticatedUser, entryId: string, input: AdjustEntryInput) {
+  async adjustEntry(
+    user: AuthenticatedUser,
+    entryId: string,
+    input: AdjustEntryInput,
+    ipAddress?: string | null,
+  ) {
     const entry = await prisma.timeEntry.findFirst({
       where: {
         id: entryId,
         organizationId: user.organizationId,
+        plantId: user.role === "PLANT_SUPERVISOR" ? user.plantId ?? undefined : undefined,
       },
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
+        adjustedByUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -900,32 +1135,39 @@ export class TimeEntriesService {
       throw new DomainError("Registro nao encontrado.", 404);
     }
 
-    const closedAt = input.closedAt === undefined ? entry.closedAt : input.closedAt;
+    const nextOpenedAt = input.openedAt ?? entry.openedAt;
+    const nextClosedAt = input.closedAt === undefined ? entry.closedAt : input.closedAt;
     const totalMinutes =
-      closedAt !== null
-        ? Math.max(
-            0,
-            Math.round(
-              (closedAt.getTime() - (input.openedAt ?? entry.openedAt).getTime()) / 60000,
-            ),
-          )
+      nextClosedAt !== null
+        ? Math.max(0, Math.round((nextClosedAt.getTime() - nextOpenedAt.getTime()) / 60000))
         : null;
 
     const updated = await prisma.timeEntry.update({
       where: { id: entryId },
       data: {
-        openedAt: input.openedAt ?? entry.openedAt,
-        closedAt,
+        openedAt: nextOpenedAt,
+        closedAt: nextClosedAt,
         totalMinutes,
         notes: input.notes ?? entry.notes,
         status: input.status ?? "ADJUSTED",
         adjustedByUserId: user.id,
         origin: "MANUAL_ADJUSTMENT",
-        closedReason: closedAt ? entry.closedReason ?? "ADJUSTED" : null,
+        closedReason: nextClosedAt ? entry.closedReason ?? "ADJUSTED" : null,
       },
       include: {
-        employee: true,
+        accessProfile: {
+          include: {
+            person: true,
+          },
+        },
         plant: true,
+        adjustedByUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -935,7 +1177,11 @@ export class TimeEntriesService {
       action: "TIME_ENTRY.ADJUSTED",
       entity: "TimeEntry",
       entityId: updated.id,
+      ipAddress: ipAddress ?? null,
       metadata: {
+        accessProfileId: updated.accessProfileId,
+        personId: updated.accessProfile.person.id,
+        plantId: updated.plantId,
         openedAt: updated.openedAt.toISOString(),
         closedAt: updated.closedAt?.toISOString() ?? null,
         totalMinutes: updated.totalMinutes,

@@ -4,6 +4,7 @@ import { AppModules, UserRoles, type AppModule, type UserRole } from "@/domains/
 import { appServices } from "@/shared/kernel/app-services";
 import { DomainError } from "@/shared/kernel/domain-error";
 import { handleDomainError } from "@/shared/http/handle-domain-error";
+import { readClientIp } from "@/shared/http/read-client-ip";
 import { accessUserSchema, commonErrorResponses } from "@/shared/http/response-schemas";
 
 function parseUserRole(value: string): UserRole {
@@ -65,7 +66,7 @@ export const accessRoutes = new Elysia({ prefix: "/access" })
   )
   .post(
     "/users",
-    async ({ headers, body, set }) => {
+    async ({ headers, body, request, server, set }) => {
       try {
         const user = await appServices.auth.requireUser(headers.authorization);
         appServices.auth.requireModuleAccess(user, "access");
@@ -80,6 +81,9 @@ export const accessRoutes = new Elysia({ prefix: "/access" })
           role: parseUserRole(body.role),
           status: parseUserStatus(body.status),
           modulePermissions: parseModulePermissions(body.modulePermissions),
+        }, {
+          userId: user.id,
+          ipAddress: readClientIp(request.headers, request, server) ?? null,
         });
       } catch (error) {
         return handleDomainError(set, error);
@@ -103,7 +107,7 @@ export const accessRoutes = new Elysia({ prefix: "/access" })
   )
   .patch(
     "/users/:userId",
-    async ({ headers, params, body, set }) => {
+    async ({ headers, params, body, request, server, set }) => {
       try {
         const user = await appServices.auth.requireUser(headers.authorization);
         appServices.auth.requireModuleAccess(user, "access");
@@ -116,6 +120,9 @@ export const accessRoutes = new Elysia({ prefix: "/access" })
           role: body.role ? parseUserRole(body.role) : undefined,
           status: parseUserStatus(body.status),
           modulePermissions: parseModulePermissions(body.modulePermissions),
+        }, {
+          userId: user.id,
+          ipAddress: readClientIp(request.headers, request, server) ?? null,
         });
       } catch (error) {
         return handleDomainError(set, error);

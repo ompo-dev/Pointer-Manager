@@ -4,7 +4,7 @@ import "./globals.css";
 import { AppProviders } from "@/providers/app-providers";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const bodyFont = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -29,8 +29,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={cn("font-sans", geist.variable)}>
-      <body className={`${bodyFont.variable} ${monoFont.variable}`}>
+    <html
+      lang="pt-BR"
+      suppressHydrationWarning
+      className={cn("font-sans", geist.variable)}
+    >
+      <body
+        className={cn(
+          bodyFont.variable,
+          monoFont.variable,
+          "bg-sidebar text-foreground antialiased",
+        )}
+      >
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

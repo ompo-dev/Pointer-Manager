@@ -7,6 +7,6 @@
  */
 
 export type _GetApiV1Plants200ItemCount = {
-  employees: number;
+  people: number;
   timeEntries: number;
 };

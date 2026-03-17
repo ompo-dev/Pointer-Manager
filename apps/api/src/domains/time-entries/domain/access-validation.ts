@@ -162,14 +162,7 @@ function findMatchingAuthorizedNetwork(
   };
 }
 
-function resolveObservedNetworkName(
-  input: AccessValidationInput,
-  matchedNetworkName: string | null,
-) {
-  if (matchedNetworkName) {
-    return matchedNetworkName;
-  }
-
+function resolveObservedNetworkName(input: AccessValidationInput) {
   if (input.wifiSsid?.trim()) {
     return input.wifiSsid.trim();
   }
@@ -308,11 +301,9 @@ export function evaluatePlantNetworkAccess(
 
   const activeNetworks = plant.authorizedNetworks.filter((network) => network.isActive);
   const matchedNetwork = findMatchingAuthorizedNetwork(activeNetworks, input);
-  const networkMatched = activeNetworks.length === 0 || !!matchedNetwork.network;
-  const currentNetworkName = resolveObservedNetworkName(
-    input,
-    matchedNetwork.network?.name ?? null,
-  );
+  const networkMatched = !!matchedNetwork.network;
+  const currentNetworkName =
+    resolveObservedNetworkName(input) ?? matchedNetwork.network?.name ?? null;
 
   const mobileNetworkEvidence =
     mobileNetworkDetected && networkEffectiveType
@@ -326,6 +317,20 @@ export function evaluatePlantNetworkAccess(
       message: mobileNetworkEvidence
         ? `Registro bloqueado em rede movel (${mobileNetworkEvidence}). Conecte-se a rede autorizada da usina.`
         : "Registro bloqueado em rede movel. Conecte-se a rede autorizada da usina.",
+      observedIp: input.deviceIp ?? null,
+      currentNetworkName,
+      matched: false,
+      matchedBy: null,
+      matchedNetworkName: null,
+      browserHintIgnored: false,
+    };
+  }
+
+  if (plant.requireWifiMatch && activeNetworks.length === 0) {
+    return {
+      status: "BLOCKED",
+      reason: "network",
+      message: "Esta usina exige validacao por Wi-Fi, mas ainda nao possui redes autorizadas ativas cadastradas.",
       observedIp: input.deviceIp ?? null,
       currentNetworkName,
       matched: false,
@@ -392,9 +397,14 @@ export function evaluatePlantNetworkAccess(
   return {
     status: "AUTHORIZED",
     reason: "authorized",
-    message: browserHintIgnored
-      ? `Conexao autorizada na rede ${matchedNetwork.network.name}. O indicador de rede movel do navegador foi ignorado porque o ${matchedByLabel.toLowerCase()} autorizado prevaleceu.`
-      : `Conexao autorizada na rede ${matchedNetwork.network.name} por ${matchedByLabel}.`,
+    message:
+      matchedNetwork.matchedBy === "cidr"
+        ? browserHintIgnored
+          ? `Conexao autorizada pela mesma sub-rede da usina (${matchedNetwork.network.name}). O indicador de rede movel do navegador foi ignorado porque o IP autorizado prevaleceu.`
+          : `Conexao autorizada pela mesma sub-rede da usina (${matchedNetwork.network.name}) por IP da rede.`
+        : browserHintIgnored
+          ? `Conexao autorizada na rede ${matchedNetwork.network.name}. O indicador de rede movel do navegador foi ignorado porque o ${matchedByLabel.toLowerCase()} autorizado prevaleceu.`
+          : `Conexao autorizada na rede ${matchedNetwork.network.name} por ${matchedByLabel}.`,
     observedIp: input.deviceIp ?? null,
     currentNetworkName,
     matched: true,

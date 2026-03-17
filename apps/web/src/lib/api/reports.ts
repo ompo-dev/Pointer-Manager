@@ -1,9 +1,10 @@
 import { httpClient } from "./http-client";
+import { downloadAuthenticatedFile } from "./file-download";
 import { fetchWithQueryCache, normalizeQueryParams } from "./query-cache";
 
 export interface ReportsSummary {
   hoursByPerson: Array<{
-    employeeId: string;
+    personId: string;
     fullName: string;
     cpf: string;
     employer: string;
@@ -17,7 +18,7 @@ export interface ReportsSummary {
     records: number;
   }>;
   presence: Array<{
-    employeeId: string;
+    personId: string;
     fullName: string;
     cpf: string;
     presentDays: number;
@@ -62,4 +63,26 @@ export function buildReportExportUrl(params?: {
   if (params?.to) searchParams.set("to", params.to);
   const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:4000";
   return `${base}/api/v1/reports/export?${searchParams.toString()}`;
+}
+
+export async function downloadReportExport(params?: {
+  type?: "hours-by-person" | "hours-by-plant" | "presence" | "overtime";
+  format?: "csv" | "pdf";
+  plantId?: string;
+  from?: string;
+  to?: string;
+}) {
+  const reportType = params?.type ?? "hours-by-person";
+  const format = params?.format ?? "csv";
+
+  return downloadAuthenticatedFile("/reports/export", {
+    params: {
+      type: reportType,
+      format,
+      plantId: params?.plantId,
+      from: params?.from,
+      to: params?.to,
+    },
+    fallbackFileName: `report-${reportType}.${format}`,
+  });
 }

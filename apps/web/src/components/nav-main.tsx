@@ -1,58 +1,132 @@
-"use client"
+"use client";
 
-import { MailIcon, PlusCircleIcon, type LucideIcon } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import type { Route } from "next";
+import { usePathname } from "next/navigation";
+import type { ComponentType } from "react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
-  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from "@/components/ui/sidebar";
+import { isDashboardPathActive, withDashboardPlantContext } from "@/components/layout/dashboard-nav";
+import { ChevronRightIcon } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+
+type NavItem = {
+  title: string;
+  url: Route;
+  icon?: ComponentType<{ className?: string }>;
+  items?: {
+    title: string;
+    url: Route;
+  }[];
+};
 
 export function NavMain({
   items,
+  quickLinks,
 }: {
-  items: {
-    title: string
-    url: string
-    icon?: LucideIcon
-  }[]
+  items: NavItem[];
+  quickLinks?: {
+    name: string;
+    url: Route;
+    icon: ComponentType<{ className?: string }>;
+  }[];
 }) {
+  const pathname = usePathname() ?? "/dashboard";
+  const searchParams = useSearchParams();
+  const plantId = searchParams?.get("plant");
+
   return (
-    <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
+    <>
+      <SidebarGroup>
+        <SidebarGroupLabel>Plataforma</SidebarGroupLabel>
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Quick Create"
-              className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-            >
-              <PlusCircleIcon />
-              <span>Quick Create</span>
-            </SidebarMenuButton>
-            <Button
-              size="icon"
-              className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <MailIcon />
-              <span className="sr-only">Inbox</span>
-            </Button>
-          </SidebarMenuItem>
+          {items.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.items?.some((subItem) =>
+              isDashboardPathActive(pathname, subItem.url),
+            );
+
+            return (
+              <Collapsible
+                key={item.title}
+                asChild
+                defaultOpen={isActive}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      isActive={isActive}
+                      className="group-data-[collapsible=icon]:justify-center"
+                    >
+                      {Icon ? <Icon /> : null}
+                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                      <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[collapsible=icon]:hidden group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items?.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={isDashboardPathActive(pathname, subItem.url)}
+                          >
+                            <Link href={withDashboardPlantContext(subItem.url, plantId)}>
+                              <span>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            );
+          })}
         </SidebarMenu>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  )
+      </SidebarGroup>
+
+      {quickLinks?.length ? (
+        <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel>Acesso rapido</SidebarGroupLabel>
+          <SidebarMenu>
+            {quickLinks.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <SidebarMenuItem key={item.name}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isDashboardPathActive(pathname, item.url)}
+                    tooltip={item.name}
+                    className="group-data-[collapsible=icon]:justify-center"
+                  >
+                    <Link href={withDashboardPlantContext(item.url, plantId)}>
+                      <Icon />
+                      <span className="group-data-[collapsible=icon]:hidden">{item.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+      ) : null}
+    </>
+  );
 }

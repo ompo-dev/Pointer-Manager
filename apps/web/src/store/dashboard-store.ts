@@ -3,15 +3,12 @@
 import { create } from "zustand";
 import { fetchDashboardOverview, type DashboardOverview } from "@/lib/api/dashboard";
 import { fetchPlants, type Plant } from "@/lib/api/plants";
+import type {
+  LiveFeedStatus,
+  LiveOperationsEvent,
+} from "@/lib/realtime/operations-types";
+import { showErrorToast } from "@/lib/toast";
 import { resolveErrorMessage } from "@/store/store-utils";
-
-export type LiveFeedStatus = "connecting" | "connected" | "offline";
-
-export interface LiveOperationsEvent {
-  type: "presence.snapshot" | "entry.created" | "entry.closed" | "entry.adjusted";
-  payload: Record<string, unknown>;
-  createdAt: string;
-}
 
 interface DashboardState {
   overview: DashboardOverview | null;
@@ -47,10 +44,12 @@ export const useDashboardStore = create<DashboardState>((set) => ({
       const overview = await fetchDashboardOverview(normalizePlantId(plantId));
       set({ overview, loadingOverview: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar o dashboard.");
       set({
         loadingOverview: false,
-        error: resolveErrorMessage(error, "Nao foi possivel carregar o dashboard."),
+        error: message,
       });
+      showErrorToast("Falha ao carregar dashboard", message);
     }
   },
   async loadPlants() {
@@ -60,10 +59,12 @@ export const useDashboardStore = create<DashboardState>((set) => ({
       const plants = await fetchPlants();
       set({ plants, loadingPlants: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar as usinas.");
       set({
         loadingPlants: false,
-        error: resolveErrorMessage(error, "Nao foi possivel carregar as usinas."),
+        error: message,
       });
+      showErrorToast("Falha ao carregar usinas", message);
     }
   },
   setRealtimeStatus(status) {
@@ -79,11 +80,16 @@ export const useDashboardStore = create<DashboardState>((set) => ({
 
       if (overview) {
         if (event.type === "entry.created") {
+          overview.activePeople += 1;
           overview.openEntries += 1;
-          overview.employeesWithoutExit += 1;
+          overview.peopleWithoutExit += 1;
 
           const personName =
             typeof event.payload.personName === "string" ? event.payload.personName : "Pessoa";
+          const personType =
+            typeof event.payload.personType === "string"
+              ? event.payload.personType
+              : "OTHER";
           const plantName =
             typeof event.payload.plantName === "string" ? event.payload.plantName : "Usina";
           const openedAt =
@@ -100,10 +106,11 @@ export const useDashboardStore = create<DashboardState>((set) => ({
           overview.liveEntries = [
             {
               id: entryId,
-              employeeName: personName,
-              personType: "ACCESS",
+              personName,
+              personType,
               plantName,
               openedAt,
+              elapsedMinutes: 0,
               status: status as DashboardOverview["liveEntries"][number]["status"],
             },
             ...overview.liveEntries.filter((item) => item.id !== entryId),
@@ -114,11 +121,51 @@ export const useDashboardStore = create<DashboardState>((set) => ({
           const entryId =
             typeof event.payload.entryId === "string" ? event.payload.entryId : null;
 
+          overview.activePeople = Math.max(0, overview.activePeople - 1);
           overview.openEntries = Math.max(0, overview.openEntries - 1);
-          overview.employeesWithoutExit = Math.max(0, overview.employeesWithoutExit - 1);
+          overview.peopleWithoutExit = Math.max(0, overview.peopleWithoutExit - 1);
           overview.liveEntries = entryId
             ? overview.liveEntries.filter((item) => item.id !== entryId)
             : overview.liveEntries;
+        }
+
+        if (event.type === "entry.adjusted") {
+          const entryId =
+            typeof event.payload.entryId === "string" ? event.payload.entryId : null;
+          const personName =
+            typeof event.payload.personName === "string" ? event.payload.personName : "Pessoa";
+          const personType =
+            typeof event.payload.personType === "string"
+              ? event.payload.personType
+              : "OTHER";
+          const plantName =
+            typeof event.payload.plantName === "string" ? event.payload.plantName : "Usina";
+          const openedAt =
+            typeof event.payload.openedAt === "string"
+              ? event.payload.openedAt
+              : event.createdAt;
+          const status =
+            typeof event.payload.status === "string" ? event.payload.status : "ADJUSTED";
+          const isCurrentlyOpen = event.payload.isCurrentlyOpen === true;
+
+          if (entryId && isCurrentlyOpen) {
+            overview.liveEntries = overview.liveEntries.map((item) =>
+              item.id === entryId
+                ? {
+                    ...item,
+                    personName,
+                    personType,
+                    plantName,
+                    openedAt,
+                    status: status as DashboardOverview["liveEntries"][number]["status"],
+                  }
+                : item,
+            );
+          }
+
+          if (entryId && !isCurrentlyOpen) {
+            overview.liveEntries = overview.liveEntries.filter((item) => item.id !== entryId);
+          }
         }
       }
 

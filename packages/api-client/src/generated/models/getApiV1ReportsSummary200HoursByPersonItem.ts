@@ -7,7 +7,7 @@
  */
 
 export type GetApiV1ReportsSummary200HoursByPersonItem = {
-  employeeId: string;
+  personId: string;
   fullName: string;
   cpf: string;
   employer: string;

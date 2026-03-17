@@ -1,3 +1,5 @@
+import type { Server as SocketIOServer, Socket } from "socket.io";
+
 export interface OperationsEvent {
   type: "presence.snapshot" | "entry.created" | "entry.closed" | "entry.adjusted";
   plantId?: string;
@@ -5,35 +7,62 @@ export interface OperationsEvent {
   createdAt: string;
 }
 
-interface SocketLike {
-  data?: {
-    query?: Record<string, string | undefined>;
-  };
-  send: (payload: string) => void;
+const GLOBAL_SCOPE = "scope:all";
+
+function buildPlantScope(plantId: string) {
+  return `scope:plant:${plantId}`;
 }
 
 export class OperationsHub {
-  private readonly sockets = new Set<SocketLike>();
+  private io: SocketIOServer | null = null;
 
-  connect(socket: SocketLike) {
-    this.sockets.add(socket);
+  attach(io: SocketIOServer) {
+    this.io = io;
   }
 
-  disconnect(socket: SocketLike) {
-    this.sockets.delete(socket);
+  handleConnection(socket: Socket) {
+    const plantId = this.readPlantScope(socket);
+
+    if (plantId) {
+      socket.join(buildPlantScope(plantId));
+    } else {
+      socket.join(GLOBAL_SCOPE);
+    }
+
+    socket.emit("operations:event", {
+      type: "presence.snapshot",
+      plantId,
+      payload: {
+        message: plantId
+          ? "Canal em tempo real conectado para a usina filtrada."
+          : "Canal em tempo real conectado para todo o painel.",
+      },
+      createdAt: new Date().toISOString(),
+    } satisfies OperationsEvent);
   }
 
   publish(event: OperationsEvent) {
-    const serialized = JSON.stringify(event);
-
-    for (const socket of this.sockets) {
-      const queryPlantId = socket.data?.query?.plantId;
-
-      if (queryPlantId && event.plantId && queryPlantId !== event.plantId) {
-        continue;
-      }
-
-      socket.send(serialized);
+    if (!this.io) {
+      return;
     }
+
+    if (!event.plantId) {
+      this.io.to(GLOBAL_SCOPE).emit("operations:event", event);
+      return;
+    }
+
+    this.io.to(GLOBAL_SCOPE).emit("operations:event", event);
+    this.io.to(buildPlantScope(event.plantId)).emit("operations:event", event);
+  }
+
+  private readPlantScope(socket: Socket) {
+    const queryValue = socket.handshake.query.plantId;
+
+    if (typeof queryValue !== "string") {
+      return undefined;
+    }
+
+    const normalized = queryValue.trim();
+    return normalized ? normalized : undefined;
   }
 }

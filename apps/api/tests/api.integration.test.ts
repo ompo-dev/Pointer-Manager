@@ -119,7 +119,7 @@ describe("api integration", () => {
     }
   });
 
-  it("lists plants and employees for the authenticated organization", async () => {
+  it("lists plants and people for the authenticated organization", async () => {
     const fixture = await createFixture();
 
     try {
@@ -129,7 +129,7 @@ describe("api integration", () => {
         method: "GET",
         token,
       });
-      const employeesResult = await requestJson("/api/v1/employees", {
+      const peopleResult = await requestJson("/api/v1/people", {
         method: "GET",
         token,
       });
@@ -138,9 +138,9 @@ describe("api integration", () => {
       expect(plantsResult.json).toHaveLength(1);
       expect(plantsResult.json[0].authorizedNetworks).toHaveLength(1);
 
-      expect(employeesResult.response.status).toBe(200);
-      expect(employeesResult.json).toHaveLength(1);
-      expect(employeesResult.json[0].cpf).toBe(fixture.employeeCpf);
+      expect(peopleResult.response.status).toBe(200);
+      expect(peopleResult.json).toHaveLength(1);
+      expect(peopleResult.json[0].cpf).toBe(fixture.personCpf);
     } finally {
       await cleanupFixture(fixture);
     }
@@ -157,7 +157,7 @@ describe("api integration", () => {
         const entryResult = await requestJson("/api/v1/time-entries/entry", {
           method: "POST",
           body: {
-            cpf: fixture.employeeCpf,
+            cpf: fixture.personCpf,
             plantToken: fixture.plantToken,
             deviceIp: "10.10.0.12",
             deviceLabel: "Chrome on Android",
@@ -174,7 +174,7 @@ describe("api integration", () => {
         const duplicateEntryResult = await requestJson("/api/v1/time-entries/entry", {
           method: "POST",
           body: {
-            cpf: fixture.employeeCpf,
+            cpf: fixture.personCpf,
             plantToken: fixture.plantToken,
             deviceIp: "10.10.0.12",
             wifiSsid: fixture.plantWifiSsid,
@@ -195,12 +195,12 @@ describe("api integration", () => {
 
         expect(liveEntriesResult.response.status).toBe(200);
         expect(liveEntriesResult.json).toHaveLength(1);
-        expect(liveEntriesResult.json[0].employee.cpf).toBe(fixture.employeeCpf);
+        expect(liveEntriesResult.json[0].person.cpf).toBe(fixture.personCpf);
 
         const exitResult = await requestJson("/api/v1/time-entries/exit", {
           method: "POST",
           body: {
-            cpf: fixture.employeeCpf,
+            cpf: fixture.personCpf,
             plantToken: fixture.plantToken,
             deviceIp: "10.10.0.12",
             wifiSsid: fixture.plantWifiSsid,
@@ -252,7 +252,7 @@ describe("api integration", () => {
       const initialIntake = await requestJson("/api/v1/time-entries/intake", {
         method: "POST",
         body: {
-          cpf: `${fixture.employeeCpf.slice(0, 3)}.${fixture.employeeCpf.slice(3, 6)}.${fixture.employeeCpf.slice(6, 9)}-${fixture.employeeCpf.slice(9)}`,
+          cpf: `${fixture.personCpf.slice(0, 3)}.${fixture.personCpf.slice(3, 6)}.${fixture.personCpf.slice(6, 9)}-${fixture.personCpf.slice(9)}`,
           plantToken: fixture.plantToken,
         },
       });
@@ -265,7 +265,7 @@ describe("api integration", () => {
       const entryResult = await requestJson("/api/v1/time-entries/entry", {
         method: "POST",
         body: {
-          cpf: fixture.employeeCpf,
+          cpf: fixture.personCpf,
           plantToken: fixture.plantToken,
           deviceIp: "10.10.0.12",
           wifiSsid: fixture.plantWifiSsid,
@@ -278,7 +278,7 @@ describe("api integration", () => {
       const exitIntake = await requestJson("/api/v1/time-entries/intake", {
         method: "POST",
         body: {
-          cpf: fixture.employeeCpf,
+          cpf: fixture.personCpf,
           plantToken: fixture.plantToken,
         },
       });
@@ -299,7 +299,7 @@ describe("api integration", () => {
       const entryResult = await requestJson("/api/v1/time-entries/entry", {
         method: "POST",
         body: {
-          cpf: fixture.employeeCpf,
+          cpf: fixture.personCpf,
           plantToken: fixture.plantToken,
           deviceIp: ethernetLikeIp,
           networkType: "cellular",
@@ -308,7 +308,7 @@ describe("api integration", () => {
       });
 
       expect(entryResult.response.status).toBe(200);
-      expect(entryResult.json.validationNotes).toContain("Conexao autorizada na rede");
+      expect(entryResult.json.validationNotes).toContain("mesma sub-rede da usina");
     } finally {
       await cleanupFixture(fixture);
     }
@@ -341,13 +341,59 @@ describe("api integration", () => {
           "x-real-ip": "10.10.0.42",
         },
         body: {
-          cpf: fixture.employeeCpf,
+          cpf: fixture.personCpf,
           plantToken: fixture.plantToken,
         },
       });
 
       expect(entryResult.response.status).toBe(200);
       expect(entryResult.json.deviceIp).toBe("10.10.0.42");
+    } finally {
+      await cleanupFixture(fixture);
+    }
+  });
+
+  it("requires the qr token on network-status and resolves the environment by token", async () => {
+    const fixture = await createFixture();
+
+    try {
+      const networkStatusResult = await requestJson("/api/v1/time-entries/network-status", {
+        method: "POST",
+        body: {
+          plantToken: fixture.plantToken,
+          browserIpCandidates: ["10.10.0.42"],
+          networkType: "wifi",
+        },
+      });
+
+      expect(networkStatusResult.response.status).toBe(200);
+      expect(networkStatusResult.json.plant.id).toBe(fixture.plantId);
+      expect(networkStatusResult.json.network.status).toBe("AUTHORIZED");
+      expect(networkStatusResult.json.network.observedIp).toBe("10.10.0.42");
+    } finally {
+      await cleanupFixture(fixture);
+    }
+  });
+
+  it("distinguishes wired and wifi labels but authorizes both when they share the same subnet", async () => {
+    const fixture = await createFixture();
+
+    try {
+      const networkStatusResult = await requestJson("/api/v1/time-entries/network-status", {
+        method: "POST",
+        body: {
+          plantToken: fixture.plantToken,
+          browserIpCandidates: ["10.10.0.77"],
+          networkType: "ethernet",
+        },
+      });
+
+      expect(networkStatusResult.response.status).toBe(200);
+      expect(networkStatusResult.json.network.status).toBe("AUTHORIZED");
+      expect(networkStatusResult.json.network.matchedBy).toBe("cidr");
+      expect(networkStatusResult.json.network.currentNetworkName).toContain("Rede cabeada");
+      expect(networkStatusResult.json.network.matchedNetworkName).toBeDefined();
+      expect(networkStatusResult.json.network.message).toContain("mesma sub-rede");
     } finally {
       await cleanupFixture(fixture);
     }
@@ -420,7 +466,7 @@ describe("api integration", () => {
       const entryResult = await requestJson("/api/v1/time-entries/entry", {
         method: "POST",
         body: {
-          cpf: fixture.employeeCpf,
+          cpf: fixture.personCpf,
           plantToken: fixture.plantToken,
           browserIpCandidates: ["10.10.0.42"],
           networkType: "wifi",
@@ -475,14 +521,22 @@ describe("api integration", () => {
       });
 
       expect(entryResult.response.status).toBe(200);
-      expect(entryResult.json.employee.cpf).toBe(visitorCpf);
-      expect(entryResult.json.employee.personType).toBe("VISITOR");
+      expect(entryResult.json.person.cpf).toBe(visitorCpf);
+      expect(entryResult.json.person.personType).toBe("VISITOR");
 
-      const visitor = await prisma.employee.findUnique({
-        where: { cpf: visitorCpf },
+      const visitor = await prisma.accessProfile.findFirst({
+        where: {
+          organizationId: fixture.organizationId,
+          person: {
+            is: { cpf: visitorCpf },
+          },
+        },
+        include: {
+          person: true,
+        },
       });
 
-      expect(visitor?.fullName).toBe("Visitante Teste");
+      expect(visitor?.person.fullName).toBe("Visitante Teste");
       expect(visitor?.employer).toBe("Visitante");
       expect(visitor?.jobTitle).toBe("Reuniao com operacao");
     } finally {
@@ -527,19 +581,365 @@ describe("api integration", () => {
       });
 
       expect(entryResult.response.status).toBe(200);
-      expect(entryResult.json.employee.personType).toBe("SUPERVISOR");
+      expect(entryResult.json.person.personType).toBe("SUPERVISOR");
 
-      const supervisor = await prisma.employee.findUnique({
-        where: { cpf: supervisorCpf },
+      const supervisor = await prisma.accessProfile.findFirst({
+        where: {
+          organizationId: fixture.organizationId,
+          person: {
+            is: { cpf: supervisorCpf },
+          },
+        },
+        include: {
+          person: true,
+        },
       });
 
-      expect(supervisor?.fullName).toBe("Supervisor Teste");
+      expect(supervisor?.person.fullName).toBe("Supervisor Teste");
       expect(supervisor?.employer).toBe("Supervisao");
       expect(supervisor?.jobTitle).toBe("Supervisor");
     } finally {
       await cleanupFixture(fixture);
     }
   });
+
+  it("reuses the same global person across organizations while creating a scoped access profile", async () => {
+    const sourceFixture = await createFixture();
+    const targetFixture = await createFixture();
+
+    try {
+      const entryResult = await requestJson("/api/v1/time-entries/entry", {
+        method: "POST",
+        body: {
+          cpf: sourceFixture.personCpf,
+          plantToken: targetFixture.plantToken,
+          personType: "VISITOR",
+          jobTitle: "Fornecedor externo",
+          deviceIp: "10.10.0.22",
+          wifiSsid: targetFixture.plantWifiSsid,
+          wifiBssid: targetFixture.plantWifiBssid,
+        },
+      });
+
+      expect(entryResult.response.status).toBe(200);
+      expect(entryResult.json.person.personId).toBe(sourceFixture.globalPersonId);
+
+      const globalPersonCount = await prisma.person.count({
+        where: {
+          cpf: sourceFixture.personCpf,
+        },
+      });
+      const scopedProfiles = await prisma.accessProfile.findMany({
+        where: {
+          personId: sourceFixture.globalPersonId,
+        },
+        orderBy: {
+          organizationId: "asc",
+        },
+      });
+
+      expect(globalPersonCount).toBe(1);
+      expect(scopedProfiles).toHaveLength(2);
+      expect(scopedProfiles.map((profile) => profile.organizationId)).toEqual([
+        sourceFixture.organizationId,
+        targetFixture.organizationId,
+      ]);
+    } finally {
+      await cleanupFixture(targetFixture);
+      await cleanupFixture(sourceFixture);
+    }
+  });
+
+  it("blocks public access when wifi validation is required but the plant has no authorized networks", async () => {
+    const fixture = await createFixture();
+
+    try {
+      await prisma.authorizedNetwork.deleteMany({
+        where: {
+          plantId: fixture.plantId,
+        },
+      });
+
+      const networkStatusResult = await requestJson("/api/v1/time-entries/network-status", {
+        method: "POST",
+        headers: {
+          "x-real-ip": "10.10.0.42",
+        },
+        body: {
+          plantToken: fixture.plantToken,
+        },
+      });
+
+      expect(networkStatusResult.response.status).toBe(200);
+      expect(networkStatusResult.json.network.status).toBe("BLOCKED");
+      expect(networkStatusResult.json.ready).toBe(false);
+      expect(networkStatusResult.json.network.message).toContain(
+        "nao possui redes autorizadas ativas",
+      );
+
+      const entryResult = await requestJson("/api/v1/time-entries/entry", {
+        method: "POST",
+        headers: {
+          "x-real-ip": "10.10.0.42",
+        },
+        body: {
+          cpf: fixture.personCpf,
+          plantToken: fixture.plantToken,
+        },
+      });
+
+      expect(entryResult.response.status).toBe(403);
+      expect(entryResult.json.message).toContain("nao possui redes autorizadas ativas");
+    } finally {
+      await cleanupFixture(fixture);
+    }
+  });
+
+  it("restricts plant supervisors to their own plant across plants, people and manual closing", async () => {
+    const fixture = await createFixture();
+    const suffix = randomCpf().slice(-6);
+
+    try {
+      const otherPlant = await prisma.plant.create({
+        data: {
+          organizationId: fixture.organizationId,
+          code: `plant-scope-${suffix}`,
+          name: `Plant Scope ${suffix}`,
+          city: "Juazeiro",
+          state: "BA",
+          openingHour: "06:00",
+          closingHour: "18:00",
+          qrToken: `qr-scope-${suffix}`,
+          authorizedNetworks: {
+            create: {
+              name: `Network Scope ${suffix}`,
+              ssid: `SSID-SCOPE-${suffix}`,
+              ipv4Cidr: "10.20.0.0/24",
+            },
+          },
+        },
+      });
+
+      const otherPerson = await prisma.person.create({
+        data: {
+          cpf: randomCpf("7"),
+          fullName: `Scope Person ${suffix}`,
+        },
+      });
+
+      const otherAccessProfile = await prisma.accessProfile.create({
+        data: {
+          organizationId: fixture.organizationId,
+          personId: otherPerson.id,
+          homePlantId: otherPlant.id,
+          employer: "Scope Company",
+          jobTitle: "Scope Role",
+        },
+      });
+
+      const otherEntry = await prisma.timeEntry.create({
+        data: {
+          organizationId: fixture.organizationId,
+          accessProfileId: otherAccessProfile.id,
+          plantId: otherPlant.id,
+          openedAt: new Date(),
+          status: "OPEN",
+          deviceIp: "10.20.0.22",
+        },
+      });
+
+      await prisma.user.update({
+        where: {
+          id: fixture.userId,
+        },
+        data: {
+          role: "PLANT_SUPERVISOR",
+          plantId: fixture.plantId,
+          modulePermissions: ["dashboard", "plants", "people", "time-entries", "reports"],
+        },
+      });
+
+      const token = await login(fixture);
+
+      const plantsResult = await requestJson("/api/v1/plants", {
+        method: "GET",
+        token,
+      });
+      const peopleResult = await requestJson("/api/v1/people", {
+        method: "GET",
+        token,
+      });
+      const otherPlantResult = await requestJson(`/api/v1/plants/${otherPlant.id}`, {
+        method: "GET",
+        token,
+      });
+      const liveEntriesResult = await requestJson("/api/v1/time-entries/live", {
+        method: "GET",
+        token,
+      });
+      const closeOtherEntryResult = await requestJson(`/api/v1/time-entries/${otherEntry.id}/close`, {
+        method: "POST",
+        token,
+        body: {
+          notes: "Supervisor should not close this entry",
+        },
+      });
+
+      expect(plantsResult.response.status).toBe(200);
+      expect(plantsResult.json).toHaveLength(1);
+      expect(plantsResult.json[0].id).toBe(fixture.plantId);
+
+      expect(peopleResult.response.status).toBe(200);
+      expect(peopleResult.json).toHaveLength(1);
+      expect(peopleResult.json[0].homePlantId).toBe(fixture.plantId);
+
+      expect(otherPlantResult.response.status).toBe(403);
+      expect(liveEntriesResult.response.status).toBe(200);
+      expect(liveEntriesResult.json).toHaveLength(0);
+
+      expect(closeOtherEntryResult.response.status).toBe(404);
+      expect(closeOtherEntryResult.json.message).toBe("Registro nao encontrado.");
+    } finally {
+      await cleanupFixture(fixture);
+    }
+  });
+
+  it(
+    "audits create and update operations for people, plants and access users",
+    async () => {
+      const fixture = await createFixture();
+      const suffix = randomCpf().slice(-6);
+
+      try {
+        const token = await login(fixture);
+
+        const createdPersonResult = await requestJson("/api/v1/people", {
+          method: "POST",
+          token,
+          body: {
+            fullName: `Audit Person ${suffix}`,
+            cpf: randomCpf("6"),
+            employer: "Audit Company",
+            jobTitle: "Audit Technician",
+          },
+        });
+
+        expect(createdPersonResult.response.status).toBe(200);
+
+        const updatedPersonResult = await requestJson(
+          `/api/v1/people/${createdPersonResult.json.id}`,
+          {
+            method: "PATCH",
+            token,
+            body: {
+              jobTitle: "Audit Supervisor",
+            },
+          },
+        );
+
+        expect(updatedPersonResult.response.status).toBe(200);
+
+        const createdPlantResult = await requestJson("/api/v1/plants", {
+          method: "POST",
+          token,
+          body: {
+            name: `Audit Plant ${suffix}`,
+            city: "Petrolina",
+            state: "PE",
+            openingHour: "06:00",
+            closingHour: "18:00",
+            authorizedNetworks: [
+              {
+                name: `Audit Network ${suffix}`,
+                ipv4Cidr: "10.30.0.0/24",
+              },
+            ],
+          },
+        });
+
+        expect(createdPlantResult.response.status).toBe(200);
+
+        const updatedPlantResult = await requestJson(
+          `/api/v1/plants/${createdPlantResult.json.id}`,
+          {
+            method: "PATCH",
+            token,
+            body: {
+              name: `Audit Plant Updated ${suffix}`,
+            },
+          },
+        );
+
+        expect(updatedPlantResult.response.status).toBe(200);
+
+        const createdUserResult = await requestJson("/api/v1/access/users", {
+          method: "POST",
+          token,
+          body: {
+            name: `Audit User ${suffix}`,
+            email: `audit.${suffix}@example.com`,
+            password: "Passw0rd!123",
+            role: "ADMIN",
+          },
+        });
+
+        expect(createdUserResult.response.status).toBe(200);
+
+        const updatedUserResult = await requestJson(
+          `/api/v1/access/users/${createdUserResult.json.id}`,
+          {
+            method: "PATCH",
+            token,
+            body: {
+              name: `Audit User Updated ${suffix}`,
+            },
+          },
+        );
+
+        expect(updatedUserResult.response.status).toBe(200);
+
+        const auditLogs = await prisma.auditLog.findMany({
+          where: {
+            organizationId: fixture.organizationId,
+            action: {
+              in: [
+                "PERSON.CREATED",
+                "PERSON.UPDATED",
+                "PLANT.CREATED",
+                "PLANT.UPDATED",
+                "ACCESS_USER.CREATED",
+                "ACCESS_USER.UPDATED",
+              ],
+            },
+          },
+          select: {
+            action: true,
+            metadata: true,
+          },
+        });
+
+        const actions = auditLogs.map((log) => log.action);
+
+        expect(actions).toEqual(
+          expect.arrayContaining([
+            "PERSON.CREATED",
+            "PERSON.UPDATED",
+            "PLANT.CREATED",
+            "PLANT.UPDATED",
+            "ACCESS_USER.CREATED",
+            "ACCESS_USER.UPDATED",
+          ]),
+        );
+
+        expect(
+          auditLogs.every((log) => log.metadata && typeof log.metadata === "object"),
+        ).toBe(true);
+      } finally {
+        await cleanupFixture(fixture);
+      }
+    },
+    15000,
+  );
 
   it("returns dashboard overview with overtime alerts and audit feed", async () => {
     const fixture = await createFixture();
@@ -551,7 +951,7 @@ describe("api integration", () => {
       await prisma.timeEntry.create({
         data: {
           organizationId: fixture.organizationId,
-          employeeId: fixture.employeeId,
+          accessProfileId: fixture.personId,
           plantId: fixture.plantId,
           openedAt,
           status: "OPEN",
@@ -569,7 +969,7 @@ describe("api integration", () => {
       });
 
       expect(dashboardResult.response.status).toBe(200);
-      expect(dashboardResult.json.activeEmployees).toBe(1);
+      expect(dashboardResult.json.activePeople).toBe(1);
       expect(dashboardResult.json.openEntries).toBe(1);
       expect(dashboardResult.json.liveEntries).toHaveLength(1);
       expect(dashboardResult.json.overtimeAlerts).toHaveLength(1);

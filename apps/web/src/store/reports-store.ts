@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { fetchPlants, type Plant } from "@/lib/api/plants";
 import { fetchReportsSummary, type ReportsSummary } from "@/lib/api/reports";
+import { showErrorToast } from "@/lib/toast";
 import { resolveErrorMessage } from "@/store/store-utils";
 
 interface ReportsStore {
@@ -29,10 +30,12 @@ export const useReportsStore = create<ReportsStore>((set) => ({
       const plantOptions = await fetchPlants();
       set({ plantOptions, loadingPlants: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar as usinas.");
       set({
         loadingPlants: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar as usinas."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar usinas", message);
     }
   },
   async loadSummary(filters) {
@@ -42,10 +45,12 @@ export const useReportsStore = create<ReportsStore>((set) => ({
       const summary = await fetchReportsSummary(filters);
       set({ summary, loadingSummary: false });
     } catch (error) {
+      const message = resolveErrorMessage(error, "Nao foi possivel carregar os relatorios.");
       set({
         loadingSummary: false,
-        feedback: resolveErrorMessage(error, "Nao foi possivel carregar os relatorios."),
+        feedback: message,
       });
+      showErrorToast("Falha ao carregar relatorios", message);
     }
   },
   clearFeedback() {

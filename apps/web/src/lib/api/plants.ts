@@ -37,6 +37,14 @@ export interface DetectedPlantNetwork {
   }>;
 }
 
+export interface PlantPersonSummary {
+  id: string;
+  personId: string;
+  fullName: string;
+  cpf: string;
+  personType: string;
+}
+
 export interface Plant {
   id: string;
   code: string;
@@ -57,7 +65,7 @@ export interface Plant {
   geofenceRadiusMeters?: number | null;
   authorizedNetworks: AuthorizedNetwork[];
   _count?: {
-    employees: number;
+    people: number;
     timeEntries: number;
   };
 }
@@ -66,12 +74,7 @@ export interface PlantDetails extends Plant {
   presentPeople: Array<{
     id: string;
     openedAt: string;
-    employee: {
-      id: string;
-      fullName: string;
-      cpf: string;
-      personType: string;
-    };
+    person: PlantPersonSummary;
   }>;
   history: Array<{
     id: string;
@@ -79,11 +82,7 @@ export interface PlantDetails extends Plant {
     closedAt?: string | null;
     status: string;
     totalMinutes?: number | null;
-    employee: {
-      fullName: string;
-      cpf: string;
-      personType: string;
-    };
+    person: PlantPersonSummary;
   }>;
 }
 
@@ -114,7 +113,27 @@ export async function detectCurrentPlantNetwork(payload?: {
   return response.data;
 }
 
-export async function createPlant(payload: Omit<Plant, "id" | "authorizedNetworks" | "_count"> & { authorizedNetworks: AuthorizedNetwork[] }) {
+export interface PlantUpsertPayload {
+  code?: string;
+  name: string;
+  city: string;
+  state: string;
+  timezone?: string;
+  openingHour: string;
+  closingHour: string;
+  qrToken?: string;
+  status?: string;
+  requireWifiMatch?: boolean;
+  requireSelfie?: boolean;
+  autoCloseLimitHours?: number;
+  lateAlertMinutes?: number;
+  geofenceLatitude?: number | null;
+  geofenceLongitude?: number | null;
+  geofenceRadiusMeters?: number | null;
+  authorizedNetworks: AuthorizedNetwork[];
+}
+
+export async function createPlant(payload: PlantUpsertPayload) {
   const response = await httpClient.post<Plant>("/plants", payload);
   invalidateQueryCache(["plants", "plant", "dashboard-overview", "reports-summary"]);
   return response.data;
@@ -122,9 +141,7 @@ export async function createPlant(payload: Omit<Plant, "id" | "authorizedNetwork
 
 export async function updatePlant(
   plantId: string,
-  payload: Partial<Omit<Plant, "id" | "authorizedNetworks" | "_count">> & {
-    authorizedNetworks?: AuthorizedNetwork[];
-  },
+  payload: Partial<PlantUpsertPayload>,
 ) {
   const response = await httpClient.patch<Plant>(`/plants/${plantId}`, payload);
   invalidateQueryCache(["plants", "plant", "dashboard-overview", "reports-summary"]);
@@ -133,10 +150,5 @@ export async function updatePlant(
 
 export async function fetchPublicPlant(qrToken: string) {
   const response = await publicHttpClient.get<Plant>(`/plants/public/${qrToken}`);
-  return response.data;
-}
-
-export async function fetchPublicPlantById(plantId: string) {
-  const response = await publicHttpClient.get<Plant>(`/plants/public/by-id/${plantId}`);
   return response.data;
 }

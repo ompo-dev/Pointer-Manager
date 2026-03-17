@@ -64,6 +64,11 @@ export const auth = betterAuth({
         type: ["SUPER_ADMIN", "ADMIN", "PLANT_SUPERVISOR"],
         input: false,
       },
+      modulePermissions: {
+        type: "string[]",
+        required: false,
+        input: false,
+      },
       status: {
         type: ["ACTIVE", "INACTIVE"],
         input: false,
@@ -125,6 +130,7 @@ export const auth = betterAuth({
           organizationId: user.organizationId,
           plantId: user.plantId ?? null,
           role: user.role,
+          modulePermissions: user.modulePermissions ?? [],
           status: user.status,
           email: user.email,
           name: user.name,

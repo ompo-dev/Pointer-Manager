@@ -2,11 +2,11 @@ import { httpClient } from "./http-client";
 import { fetchWithQueryCache, normalizeQueryParams } from "./query-cache";
 
 export interface DashboardOverview {
-  activeEmployees: number;
+  activePeople: number;
   openEntries: number;
   recordsToday: number;
-  plantsOnline: number;
-  employeesWithoutExit: number;
+  plantsWithActivityToday: number;
+  peopleWithoutExit: number;
   hoursByPlantToday: Array<{
     plantId: string;
     plantName: string;
@@ -21,16 +21,17 @@ export interface DashboardOverview {
   }>;
   overtimeAlerts: Array<{
     id: string;
-    employeeName: string;
+    personName: string;
     plantName: string;
     minutesOpen: number;
   }>;
   liveEntries: Array<{
     id: string;
-    employeeName: string;
+    personName: string;
     personType: string;
     plantName: string;
     openedAt: string;
+    elapsedMinutes: number;
     status: "OPEN" | "CLOSED" | "ADJUSTED" | "AUTO_CLOSED";
   }>;
 }

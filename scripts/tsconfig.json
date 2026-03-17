@@ -2,8 +2,12 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
-    "types": ["node"]
+    "rootDir": "..",
+    "baseUrl": "..",
+    "types": ["node"],
+    "paths": {
+      "@/*": ["apps/api/src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src/**/*.ts", "../apps/api/src/**/*.ts"]
 }

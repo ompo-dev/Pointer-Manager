@@ -7,6 +7,6 @@
  */
 
 export type _GetApiV1PlantsPublicByQrToken200Count = {
-  employees: number;
+  people: number;
   timeEntries: number;
 };

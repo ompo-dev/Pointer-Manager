@@ -16,10 +16,10 @@ import type {
   GetApiV1Audit200Item,
   GetApiV1AuthMe200,
   GetApiV1DashboardOverview200,
-  GetApiV1Employees200Item,
-  GetApiV1EmployeesByPersonId200,
-  GetApiV1EmployeesByPersonIdHistory200Item,
   GetApiV1Health200,
+  GetApiV1People200Item,
+  GetApiV1PeopleByPersonId200,
+  GetApiV1PeopleByPersonIdHistory200Item,
   GetApiV1Plants200Item,
   GetApiV1PlantsByPlantId200,
   GetApiV1PlantsByPlantIdHistory200Item,
@@ -31,16 +31,16 @@ import type {
   GetApiV1TimeEntriesLive200Item,
   PatchApiV1AccessUsersByUserId200,
   PatchApiV1AccessUsersByUserIdBody,
-  PatchApiV1EmployeesByPersonId200,
-  PatchApiV1EmployeesByPersonIdBody,
+  PatchApiV1PeopleByPersonId200,
+  PatchApiV1PeopleByPersonIdBody,
   PatchApiV1PlantsByPlantId200,
   PatchApiV1PlantsByPlantIdBody,
   PostApiV1AccessUsers200,
   PostApiV1AccessUsersBody,
   PostApiV1AuthLogin200,
   PostApiV1AuthLoginBody,
-  PostApiV1Employees200,
-  PostApiV1EmployeesBody,
+  PostApiV1People200,
+  PostApiV1PeopleBody,
   PostApiV1Plants200,
   PostApiV1PlantsBody,
   PostApiV1PlantsDetectNetwork200,
@@ -192,54 +192,54 @@ const getApiV1PlantsPublicByQrToken = <TData = AxiosResponse<GetApiV1PlantsPubli
     );
   }
 
-const getApiV1Employees = <TData = AxiosResponse<GetApiV1Employees200Item[]>>(
+const getApiV1People = <TData = AxiosResponse<GetApiV1People200Item[]>>(
      options?: AxiosRequestConfig
  ): Promise<TData> => {
     return axios.default.get(
-      `/api/v1/employees/`,options
+      `/api/v1/people/`,options
     );
   }
 
-const postApiV1Employees = <TData = AxiosResponse<PostApiV1Employees200>>(
-    postApiV1EmployeesBody: PostApiV1EmployeesBody, options?: AxiosRequestConfig
+const postApiV1People = <TData = AxiosResponse<PostApiV1People200>>(
+    postApiV1PeopleBody: PostApiV1PeopleBody, options?: AxiosRequestConfig
  ): Promise<TData> => {
     return axios.default.post(
-      `/api/v1/employees/`,
-      postApiV1EmployeesBody,options
+      `/api/v1/people/`,
+      postApiV1PeopleBody,options
     );
   }
 
-const getApiV1EmployeesByPersonId = <TData = AxiosResponse<GetApiV1EmployeesByPersonId200>>(
+const getApiV1PeopleByPersonId = <TData = AxiosResponse<GetApiV1PeopleByPersonId200>>(
     personId: string, options?: AxiosRequestConfig
  ): Promise<TData> => {
     return axios.default.get(
-      `/api/v1/employees/${personId}`,options
+      `/api/v1/people/${personId}`,options
     );
   }
 
-const patchApiV1EmployeesByPersonId = <TData = AxiosResponse<PatchApiV1EmployeesByPersonId200>>(
+const patchApiV1PeopleByPersonId = <TData = AxiosResponse<PatchApiV1PeopleByPersonId200>>(
     personId: string,
-    patchApiV1EmployeesByPersonIdBody: PatchApiV1EmployeesByPersonIdBody, options?: AxiosRequestConfig
+    patchApiV1PeopleByPersonIdBody: PatchApiV1PeopleByPersonIdBody, options?: AxiosRequestConfig
  ): Promise<TData> => {
     return axios.default.patch(
-      `/api/v1/employees/${personId}`,
-      patchApiV1EmployeesByPersonIdBody,options
+      `/api/v1/people/${personId}`,
+      patchApiV1PeopleByPersonIdBody,options
     );
   }
 
-const getApiV1EmployeesByPersonIdHistory = <TData = AxiosResponse<GetApiV1EmployeesByPersonIdHistory200Item[]>>(
+const getApiV1PeopleByPersonIdHistory = <TData = AxiosResponse<GetApiV1PeopleByPersonIdHistory200Item[]>>(
     personId: string, options?: AxiosRequestConfig
  ): Promise<TData> => {
     return axios.default.get(
-      `/api/v1/employees/${personId}/history`,options
+      `/api/v1/people/${personId}/history`,options
     );
   }
 
-const getApiV1EmployeesByPersonIdExport = <TData = AxiosResponse<void>>(
+const getApiV1PeopleByPersonIdExport = <TData = AxiosResponse<void>>(
     personId: string, options?: AxiosRequestConfig
  ): Promise<TData> => {
     return axios.default.get(
-      `/api/v1/employees/${personId}/export`,options
+      `/api/v1/people/${personId}/export`,options
     );
   }
 
@@ -355,7 +355,7 @@ const getApiV1Audit = <TData = AxiosResponse<GetApiV1Audit200Item[]>>(
     );
   }
 
-return {getApiV1Health,postApiV1AuthLogin,getApiV1AuthMe,getApiV1AccessUsers,postApiV1AccessUsers,patchApiV1AccessUsersByUserId,getApiV1Plants,postApiV1Plants,getApiV1PlantsDetectNetwork,postApiV1PlantsDetectNetwork,getApiV1PlantsByPlantId,patchApiV1PlantsByPlantId,getApiV1PlantsByPlantIdPresent,getApiV1PlantsByPlantIdHistory,getApiV1PlantsPublicByQrToken,getApiV1Employees,postApiV1Employees,getApiV1EmployeesByPersonId,patchApiV1EmployeesByPersonId,getApiV1EmployeesByPersonIdHistory,getApiV1EmployeesByPersonIdExport,getApiV1ReportsSummary,getApiV1ReportsExport,getApiV1TimeEntries,getApiV1TimeEntriesLive,postApiV1TimeEntriesNetworkStatus,postApiV1TimeEntriesIntake,postApiV1TimeEntriesEntry,postApiV1TimeEntriesExit,postApiV1TimeEntriesByEntryIdClose,postApiV1TimeEntriesByEntryIdAdjust,postApiV1TimeEntriesAutoCloseRun,getApiV1DashboardOverview,getApiV1Audit}};
+return {getApiV1Health,postApiV1AuthLogin,getApiV1AuthMe,getApiV1AccessUsers,postApiV1AccessUsers,patchApiV1AccessUsersByUserId,getApiV1Plants,postApiV1Plants,getApiV1PlantsDetectNetwork,postApiV1PlantsDetectNetwork,getApiV1PlantsByPlantId,patchApiV1PlantsByPlantId,getApiV1PlantsByPlantIdPresent,getApiV1PlantsByPlantIdHistory,getApiV1PlantsPublicByQrToken,getApiV1People,postApiV1People,getApiV1PeopleByPersonId,patchApiV1PeopleByPersonId,getApiV1PeopleByPersonIdHistory,getApiV1PeopleByPersonIdExport,getApiV1ReportsSummary,getApiV1ReportsExport,getApiV1TimeEntries,getApiV1TimeEntriesLive,postApiV1TimeEntriesNetworkStatus,postApiV1TimeEntriesIntake,postApiV1TimeEntriesEntry,postApiV1TimeEntriesExit,postApiV1TimeEntriesByEntryIdClose,postApiV1TimeEntriesByEntryIdAdjust,postApiV1TimeEntriesAutoCloseRun,getApiV1DashboardOverview,getApiV1Audit}};
 export type GetApiV1HealthResult = AxiosResponse<GetApiV1Health200>
 export type PostApiV1AuthLoginResult = AxiosResponse<PostApiV1AuthLogin200>
 export type GetApiV1AuthMeResult = AxiosResponse<GetApiV1AuthMe200>
@@ -371,12 +371,12 @@ export type PatchApiV1PlantsByPlantIdResult = AxiosResponse<PatchApiV1PlantsByPl
 export type GetApiV1PlantsByPlantIdPresentResult = AxiosResponse<GetApiV1PlantsByPlantIdPresent200Item[]>
 export type GetApiV1PlantsByPlantIdHistoryResult = AxiosResponse<GetApiV1PlantsByPlantIdHistory200Item[]>
 export type GetApiV1PlantsPublicByQrTokenResult = AxiosResponse<GetApiV1PlantsPublicByQrToken200>
-export type GetApiV1EmployeesResult = AxiosResponse<GetApiV1Employees200Item[]>
-export type PostApiV1EmployeesResult = AxiosResponse<PostApiV1Employees200>
-export type GetApiV1EmployeesByPersonIdResult = AxiosResponse<GetApiV1EmployeesByPersonId200>
-export type PatchApiV1EmployeesByPersonIdResult = AxiosResponse<PatchApiV1EmployeesByPersonId200>
-export type GetApiV1EmployeesByPersonIdHistoryResult = AxiosResponse<GetApiV1EmployeesByPersonIdHistory200Item[]>
-export type GetApiV1EmployeesByPersonIdExportResult = AxiosResponse<void>
+export type GetApiV1PeopleResult = AxiosResponse<GetApiV1People200Item[]>
+export type PostApiV1PeopleResult = AxiosResponse<PostApiV1People200>
+export type GetApiV1PeopleByPersonIdResult = AxiosResponse<GetApiV1PeopleByPersonId200>
+export type PatchApiV1PeopleByPersonIdResult = AxiosResponse<PatchApiV1PeopleByPersonId200>
+export type GetApiV1PeopleByPersonIdHistoryResult = AxiosResponse<GetApiV1PeopleByPersonIdHistory200Item[]>
+export type GetApiV1PeopleByPersonIdExportResult = AxiosResponse<void>
 export type GetApiV1ReportsSummaryResult = AxiosResponse<GetApiV1ReportsSummary200>
 export type GetApiV1ReportsExportResult = AxiosResponse<void>
 export type GetApiV1TimeEntriesResult = AxiosResponse<GetApiV1TimeEntries200Item[]>

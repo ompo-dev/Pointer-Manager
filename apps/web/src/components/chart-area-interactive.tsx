@@ -15,13 +15,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SearchableCombobox } from "@/components/ui/searchable-combobox"
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -158,6 +152,12 @@ export function ChartAreaInteractive() {
     return date >= startDate
   })
 
+  const timeRangeOptions = [
+    { value: "90d", label: "Last 3 months" },
+    { value: "30d", label: "Last 30 days" },
+    { value: "7d", label: "Last 7 days" },
+  ]
+
   return (
     <Card className="@container/card">
       <CardHeader className="relative">
@@ -186,25 +186,17 @@ export function ChartAreaInteractive() {
               Last 7 days
             </ToggleGroupItem>
           </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="@[767px]/card:hidden flex w-40"
-              aria-label="Select a value"
-            >
-              <SelectValue placeholder="Last 3 months" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">
-                Last 3 months
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
-              </SelectItem>
-              <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="@[767px]/card:hidden flex w-40">
+            <SearchableCombobox
+              value={timeRange}
+              onValueChange={setTimeRange}
+              options={timeRangeOptions}
+              placeholder="Last 3 months"
+              searchPlaceholder="Search range..."
+              emptyMessage="No range found."
+              className="h-8 rounded-xl"
+            />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">

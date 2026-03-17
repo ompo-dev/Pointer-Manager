@@ -1,8 +1,10 @@
 import { httpClient } from "./http-client";
+import { downloadAuthenticatedFile } from "./file-download";
 import { fetchWithQueryCache, invalidateQueryCache, normalizeQueryParams } from "./query-cache";
 
 export interface Person {
   id: string;
+  personId: string;
   fullName: string;
   cpf: string;
   personType: string;
@@ -13,8 +15,8 @@ export interface Person {
   photoUrl?: string | null;
   notes?: string | null;
   status: string;
-  primaryPlantId?: string | null;
-  primaryPlant?: {
+  homePlantId?: string | null;
+  homePlant?: {
     id: string;
     name: string;
   } | null;
@@ -47,30 +49,30 @@ export async function fetchPeople(params?: {
   const normalizedParams = normalizeQueryParams(params);
 
   return fetchWithQueryCache(["people", normalizedParams ?? {}], async () => {
-    const response = await httpClient.get<Person[]>("/employees", { params: normalizedParams });
+    const response = await httpClient.get<Person[]>("/people", { params: normalizedParams });
     return response.data;
   });
 }
 
 export async function fetchPerson(personId: string) {
   return fetchWithQueryCache(["person", personId], async () => {
-    const response = await httpClient.get<PersonDetails>(`/employees/${personId}`);
+    const response = await httpClient.get<PersonDetails>(`/people/${personId}`);
     return response.data;
   });
 }
 
-export async function createPerson(payload: Omit<Person, "id" | "primaryPlant" | "_count">) {
-  const response = await httpClient.post<Person>("/employees", payload);
-  invalidateQueryCache(["people", "person", "time-entries", "dashboard-overview", "reports-summary"]);
+export async function createPerson(payload: Omit<Person, "id" | "personId" | "homePlant" | "_count">) {
+  const response = await httpClient.post<Person>("/people", payload);
+  invalidateQueryCache(["people", "person", "time-entries", "live-time-entries", "dashboard-overview", "reports-summary"]);
   return response.data;
 }
 
 export async function updatePerson(
   personId: string,
-  payload: Partial<Omit<Person, "id" | "primaryPlant" | "_count">>,
+  payload: Partial<Omit<Person, "id" | "personId" | "homePlant" | "_count">>,
 ) {
-  const response = await httpClient.patch<Person>(`/employees/${personId}`, payload);
-  invalidateQueryCache(["people", "person", "time-entries", "dashboard-overview", "reports-summary"]);
+  const response = await httpClient.patch<Person>(`/people/${personId}`, payload);
+  invalidateQueryCache(["people", "person", "time-entries", "live-time-entries", "dashboard-overview", "reports-summary"]);
   return response.data;
 }
 
@@ -85,5 +87,20 @@ export function buildPersonHistoryExportUrl(personId: string, params?: {
   if (params?.status && params.status !== "ALL") searchParams.set("status", params.status);
   const query = searchParams.toString();
   const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:4000";
-  return `${base}/api/v1/employees/${personId}/export${query ? `?${query}` : ""}`;
+  return `${base}/api/v1/people/${personId}/export${query ? `?${query}` : ""}`;
+}
+
+export async function downloadPersonHistoryExport(personId: string, params?: {
+  from?: string;
+  to?: string;
+  status?: string;
+}) {
+  return downloadAuthenticatedFile(`/people/${personId}/export`, {
+    params: {
+      from: params?.from,
+      to: params?.to,
+      status: params?.status && params.status !== "ALL" ? params.status : undefined,
+    },
+    fallbackFileName: `person-${personId}-history.csv`,
+  });
 }

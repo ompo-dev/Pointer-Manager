@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { showWarningToast } from "@/lib/toast";
 import { useAuthStore } from "@/store/auth-store";
 
 const schema = z.object({
@@ -30,7 +31,10 @@ export function LoginForm() {
     });
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Credenciais invalidas.");
+      const message =
+        parsed.error.issues[0]?.message ?? "Credenciais invalidas.";
+      setError(message);
+      showWarningToast("Revise os dados informados", message);
       return;
     }
 

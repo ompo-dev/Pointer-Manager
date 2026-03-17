@@ -8,7 +8,7 @@
 import type { PostApiV1PlantsBodyAuthorizedNetworksItem } from './postApiV1PlantsBodyAuthorizedNetworksItem';
 
 export type PostApiV1PlantsBody = {
-  code: string;
+  code?: string;
   name: string;
   city: string;
   state: string;

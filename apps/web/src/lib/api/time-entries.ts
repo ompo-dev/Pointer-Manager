@@ -1,11 +1,18 @@
 import { httpClient, publicHttpClient } from "./http-client";
 import { fetchWithQueryCache, invalidateQueryCache, normalizeQueryParams } from "./query-cache";
 
+function omitNilValues<T extends object>(payload: T) {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== null && value !== undefined),
+  ) as Partial<T>;
+}
+
 export interface TimeEntryRecord {
   id: string;
   openedAt: string;
   closedAt?: string | null;
   totalMinutes?: number | null;
+  elapsedMinutes: number;
   status: string;
   origin: string;
   deviceIp?: string | null;
@@ -19,12 +26,14 @@ export interface TimeEntryRecord {
   validationNotes?: string | null;
   notes?: string | null;
   closedReason?: string | null;
-  employee: {
+  person: {
     id: string;
+    personId: string;
     fullName: string;
     cpf: string;
     personType: string;
     employer: string;
+    jobTitle: string;
   };
   plant: {
     id: string;
@@ -41,8 +50,7 @@ export interface TimeEntryRecord {
 
 export interface AccessPayload {
   cpf: string;
-  plantToken?: string | null;
-  plantId?: string | null;
+  plantToken: string;
   fullName?: string;
   employer?: string;
   jobTitle?: string;
@@ -81,6 +89,7 @@ export interface AccessIntakeContext {
   };
   person: {
     id: string;
+    personId: string;
     fullName: string;
     cpf: string;
     personType: string;
@@ -142,7 +151,7 @@ export interface AccessNetworkStatus {
 export async function fetchTimeEntries(params?: {
   search?: string;
   plantId?: string;
-  employeeId?: string;
+  personId?: string;
   status?: string;
   from?: string;
   to?: string;
@@ -172,16 +181,17 @@ export async function fetchLiveTimeEntries(plantId?: string) {
 
 export async function fetchAccessIntake(payload: {
   cpf: string;
-  plantToken?: string | null;
-  plantId?: string | null;
+  plantToken: string;
 }) {
-  const response = await publicHttpClient.post<AccessIntakeContext>("/time-entries/intake", payload);
+  const response = await publicHttpClient.post<AccessIntakeContext>(
+    "/time-entries/intake",
+    omitNilValues(payload),
+  );
   return response.data;
 }
 
 export async function fetchAccessNetworkStatus(payload: {
-  plantToken?: string | null;
-  plantId?: string | null;
+  plantToken: string;
   geoLatitude?: number | null;
   geoLongitude?: number | null;
   browserIpCandidates?: string[];
@@ -190,19 +200,30 @@ export async function fetchAccessNetworkStatus(payload: {
 }) {
   const response = await publicHttpClient.post<AccessNetworkStatus>(
     "/time-entries/network-status",
-    payload,
+    omitNilValues(payload),
   );
   return response.data;
 }
 
 export async function registerAccessEntry(payload: AccessPayload) {
-  const response = await publicHttpClient.post<TimeEntryRecord>("/time-entries/entry", payload);
+  const response = await publicHttpClient.post<TimeEntryRecord>(
+    "/time-entries/entry",
+    omitNilValues(payload),
+  );
   invalidateQueryCache(["time-entries", "live-time-entries", "dashboard-overview", "reports-summary", "audit"]);
   return response.data;
 }
 
-export async function registerAccessExit(payload: Omit<AccessPayload, "fullName" | "employer" | "jobTitle" | "personType" | "email" | "phone" | "photoUrl" | "notes" | "deviceLabel">) {
-  const response = await publicHttpClient.post<TimeEntryRecord>("/time-entries/exit", payload);
+export async function registerAccessExit(
+  payload: Omit<
+    AccessPayload,
+    "fullName" | "employer" | "jobTitle" | "personType" | "email" | "phone" | "photoUrl" | "notes" | "deviceLabel"
+  >,
+) {
+  const response = await publicHttpClient.post<TimeEntryRecord>(
+    "/time-entries/exit",
+    omitNilValues(payload),
+  );
   invalidateQueryCache(["time-entries", "live-time-entries", "dashboard-overview", "reports-summary", "audit"]);
   return response.data;
 }

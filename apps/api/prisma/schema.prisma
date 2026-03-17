@@ -24,10 +24,12 @@ enum PlantStatus {
   INACTIVE
 }
 
-enum EmployeeStatus {
+enum AccessProfileStatus {
   ACTIVE
   INACTIVE
   LEAVE
+
+  @@map("EmployeeStatus")
 }
 
 enum PersonType {
@@ -59,7 +61,7 @@ model Organization {
   name           String
   plants         Plant[]
   users          User[]
-  employees      Employee[]
+  accessProfiles AccessProfile[]
   timeEntries    TimeEntry[]
   auditLogs      AuditLog[]
   realtimeEvents RealtimeEvent[]
@@ -89,7 +91,7 @@ model Plant {
   geofenceRadiusMeters Int?
   authorizedNetworks   AuthorizedNetwork[]
   supervisors          User[]
-  employees            Employee[]          @relation("PrimaryPlantEmployees")
+  homeAccessProfiles   AccessProfile[]     @relation("HomePlantAccessProfiles")
   timeEntries          TimeEntry[]
   realtimeEvents       RealtimeEvent[]
   createdAt            DateTime            @default(now())
@@ -186,33 +188,45 @@ model Jwks {
   expiresAt  DateTime?
 }
 
-model Employee {
-  id             String         @id @default(cuid())
-  organizationId String
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  primaryPlantId String?
-  primaryPlant   Plant?         @relation("PrimaryPlantEmployees", fields: [primaryPlantId], references: [id])
+model Person {
+  id             String          @id @default(cuid())
+  cpf            String          @unique
   fullName       String
-  cpf            String         @unique
-  personType     PersonType     @default(EMPLOYEE)
+  accessProfiles AccessProfile[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model AccessProfile {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  personId       String
+  person         Person              @relation(fields: [personId], references: [id], onDelete: Cascade)
+  homePlantId    String?             @map("primaryPlantId")
+  homePlant      Plant?              @relation("HomePlantAccessProfiles", fields: [homePlantId], references: [id])
+  personType     PersonType          @default(EMPLOYEE)
   employer       String
   jobTitle       String
   email          String?
   phone          String?
   photoUrl       String?
   notes          String?
-  status         EmployeeStatus @default(ACTIVE)
+  status         AccessProfileStatus @default(ACTIVE)
   timeEntries    TimeEntry[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([organizationId, personId])
+  @@map("Employee")
 }
 
 model TimeEntry {
   id               String          @id @default(cuid())
   organizationId   String
   organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  employeeId       String
-  employee         Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  accessProfileId  String          @map("employeeId")
+  accessProfile    AccessProfile   @relation(fields: [accessProfileId], references: [id], onDelete: Cascade)
   plantId          String
   plant            Plant           @relation(fields: [plantId], references: [id], onDelete: Cascade)
   openedAt         DateTime        @default(now())
@@ -237,7 +251,7 @@ model TimeEntry {
   updatedAt        DateTime        @updatedAt
 
   @@index([organizationId, plantId, status])
-  @@index([employeeId, status])
+  @@index([accessProfileId, status], map: "TimeEntry_employeeId_status_idx")
 }
 
 model AuditLog {

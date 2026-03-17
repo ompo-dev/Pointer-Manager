@@ -1,5 +1,5 @@
-import { PeopleScreen } from "@/modules/people/people-screen";
+import { redirect } from "next/navigation";
 
 export default function EmployeesPage() {
-  return <PeopleScreen />;
+  redirect("/people");
 }

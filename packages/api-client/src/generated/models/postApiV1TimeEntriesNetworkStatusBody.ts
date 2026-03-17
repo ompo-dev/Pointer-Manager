@@ -8,11 +8,15 @@
 
 export type PostApiV1TimeEntriesNetworkStatusBody = {
   plantToken: string;
-  wifiSsid?: string;
-  wifiBssid?: string;
+  /** @nullable */
+  wifiSsid?: string | null;
+  /** @nullable */
+  wifiBssid?: string | null;
   geoLatitude?: number;
   geoLongitude?: number;
   browserIpCandidates?: string[];
-  networkType?: string;
-  networkEffectiveType?: string;
+  /** @nullable */
+  networkType?: string | null;
+  /** @nullable */
+  networkEffectiveType?: string | null;
 };

@@ -7,6 +7,6 @@
  */
 
 export type _PostApiV1Plants200Count = {
-  employees: number;
+  people: number;
   timeEntries: number;
 };

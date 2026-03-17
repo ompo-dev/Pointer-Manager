@@ -1,16 +1,24 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { stringify as stringifyYaml } from "yaml";
 import { app } from "../../apps/api/src/app";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(currentDirectory, "..", "..");
-const outputFile = path.join(
+const outputJsonFile = path.join(
   workspaceRoot,
   "packages",
   "contracts",
   "openapi",
   "point-manager.json",
+);
+const outputYamlFile = path.join(
+  workspaceRoot,
+  "packages",
+  "contracts",
+  "openapi",
+  "point-manager.yaml",
 );
 
 async function main() {
@@ -21,9 +29,12 @@ async function main() {
   }
 
   const document = sanitizeOpenApiDocument(await response.json());
-  await mkdir(path.dirname(outputFile), { recursive: true });
-  await writeFile(outputFile, `${JSON.stringify(document, null, 2)}\n`, "utf8");
-  console.log(`OpenAPI gerado em ${outputFile}`);
+  const outputDirectory = path.dirname(outputJsonFile);
+  await mkdir(outputDirectory, { recursive: true });
+  await writeFile(outputJsonFile, `${JSON.stringify(document, null, 2)}\n`, "utf8");
+  await writeFile(outputYamlFile, stringifyYaml(document), "utf8");
+  console.log(`OpenAPI gerado em ${outputJsonFile}`);
+  console.log(`OpenAPI YAML gerado em ${outputYamlFile}`);
 }
 
 function sanitizeSchemaNode(value: unknown): unknown {
@@ -74,7 +85,8 @@ function sanitizeSchemaNode(value: unknown): unknown {
   }
 
   if (record.content && typeof record.content === "object" && !Array.isArray(record.content)) {
-    const preferredJsonContent = record.content["application/json"];
+    const content = record.content as Record<string, unknown>;
+    const preferredJsonContent = content["application/json"];
 
     if (preferredJsonContent) {
       record.content = {

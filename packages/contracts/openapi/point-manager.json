@@ -1102,11 +1102,11 @@
                       "_count": {
                         "type": "object",
                         "required": [
-                          "employees",
+                          "people",
                           "timeEntries"
                         ],
                         "properties": {
-                          "employees": {
+                          "people": {
                             "type": "number"
                           },
                           "timeEntries": {
@@ -1331,11 +1331,11 @@
                     "_count": {
                       "type": "object",
                       "required": [
-                        "employees",
+                        "people",
                         "timeEntries"
                       ],
                       "properties": {
-                        "employees": {
+                        "people": {
                           "type": "number"
                         },
                         "timeEntries": {
@@ -1482,7 +1482,6 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "code",
                   "name",
                   "city",
                   "state",
@@ -2189,7 +2188,7 @@
                         "required": [
                           "id",
                           "openedAt",
-                          "employee"
+                          "person"
                         ],
                         "properties": {
                           "id": {
@@ -2198,16 +2197,20 @@
                           "openedAt": {
                             "type": "string"
                           },
-                          "employee": {
+                          "person": {
                             "type": "object",
                             "required": [
                               "id",
+                              "personId",
                               "fullName",
                               "cpf",
                               "personType"
                             ],
                             "properties": {
                               "id": {
+                                "type": "string"
+                              },
+                              "personId": {
                                 "type": "string"
                               },
                               "fullName": {
@@ -2232,7 +2235,7 @@
                           "id",
                           "openedAt",
                           "status",
-                          "employee"
+                          "person"
                         ],
                         "properties": {
                           "id": {
@@ -2252,16 +2255,20 @@
                             "type": "number",
                             "nullable": true
                           },
-                          "employee": {
+                          "person": {
                             "type": "object",
                             "required": [
                               "id",
+                              "personId",
                               "fullName",
                               "cpf",
                               "personType"
                             ],
                             "properties": {
                               "id": {
+                                "type": "string"
+                              },
+                              "personId": {
                                 "type": "string"
                               },
                               "fullName": {
@@ -2532,11 +2539,11 @@
                     "_count": {
                       "type": "object",
                       "required": [
-                        "employees",
+                        "people",
                         "timeEntries"
                       ],
                       "properties": {
-                        "employees": {
+                        "people": {
                           "type": "number"
                         },
                         "timeEntries": {
@@ -2782,7 +2789,7 @@
                     "required": [
                       "id",
                       "openedAt",
-                      "employee"
+                      "person"
                     ],
                     "properties": {
                       "id": {
@@ -2791,16 +2798,20 @@
                       "openedAt": {
                         "type": "string"
                       },
-                      "employee": {
+                      "person": {
                         "type": "object",
                         "required": [
                           "id",
+                          "personId",
                           "fullName",
                           "cpf",
                           "personType"
                         ],
                         "properties": {
                           "id": {
+                            "type": "string"
+                          },
+                          "personId": {
                             "type": "string"
                           },
                           "fullName": {
@@ -2957,7 +2968,7 @@
                       "id",
                       "openedAt",
                       "status",
-                      "employee"
+                      "person"
                     ],
                     "properties": {
                       "id": {
@@ -2977,16 +2988,20 @@
                         "type": "number",
                         "nullable": true
                       },
-                      "employee": {
+                      "person": {
                         "type": "object",
                         "required": [
                           "id",
+                          "personId",
                           "fullName",
                           "cpf",
                           "personType"
                         ],
                         "properties": {
                           "id": {
+                            "type": "string"
+                          },
+                          "personId": {
                             "type": "string"
                           },
                           "fullName": {
@@ -3228,11 +3243,11 @@
                     "_count": {
                       "type": "object",
                       "required": [
-                        "employees",
+                        "people",
                         "timeEntries"
                       ],
                       "properties": {
-                        "employees": {
+                        "people": {
                           "type": "number"
                         },
                         "timeEntries": {
@@ -3384,7 +3399,7 @@
         ]
       }
     },
-    "/api/v1/employees/": {
+    "/api/v1/people/": {
       "get": {
         "responses": {
           "200": {
@@ -3402,7 +3417,8 @@
                       "personType",
                       "employer",
                       "jobTitle",
-                      "status"
+                      "status",
+                      "personId"
                     ],
                     "properties": {
                       "id": {
@@ -3442,11 +3458,14 @@
                       "status": {
                         "type": "string"
                       },
-                      "primaryPlantId": {
+                      "homePlantId": {
                         "type": "string",
                         "nullable": true
                       },
-                      "primaryPlant": {
+                      "personId": {
+                        "type": "string"
+                      },
+                      "homePlant": {
                         "type": "object",
                         "required": [
                           "id",
@@ -3588,7 +3607,7 @@
             }
           }
         },
-        "operationId": "getApiV1Employees"
+        "operationId": "getApiV1People"
       },
       "post": {
         "parameters": [],
@@ -3637,11 +3656,14 @@
                     "status": {
                       "type": "string"
                     },
-                    "primaryPlantId": {
+                    "homePlantId": {
                       "type": "string",
                       "nullable": true
                     },
-                    "primaryPlant": {
+                    "personId": {
+                      "type": "string"
+                    },
+                    "homePlant": {
                       "type": "object",
                       "required": [
                         "id",
@@ -3676,7 +3698,8 @@
                     "personType",
                     "employer",
                     "jobTitle",
-                    "status"
+                    "status",
+                    "personId"
                   ]
                 }
               }
@@ -3791,7 +3814,7 @@
             }
           }
         },
-        "operationId": "postApiV1Employees",
+        "operationId": "postApiV1People",
         "requestBody": {
           "required": true,
           "content": {
@@ -3805,7 +3828,7 @@
                   "jobTitle"
                 ],
                 "properties": {
-                  "primaryPlantId": {
+                  "homePlantId": {
                     "type": "string",
                     "nullable": true
                   },
@@ -3851,7 +3874,7 @@
         }
       }
     },
-    "/api/v1/employees/{personId}": {
+    "/api/v1/people/{personId}": {
       "get": {
         "responses": {
           "200": {
@@ -3898,11 +3921,14 @@
                     "status": {
                       "type": "string"
                     },
-                    "primaryPlantId": {
+                    "homePlantId": {
                       "type": "string",
                       "nullable": true
                     },
-                    "primaryPlant": {
+                    "personId": {
+                      "type": "string"
+                    },
+                    "homePlant": {
                       "type": "object",
                       "required": [
                         "id",
@@ -3976,6 +4002,7 @@
                     "employer",
                     "jobTitle",
                     "status",
+                    "personId",
                     "history",
                     "totalMinutes"
                   ]
@@ -4092,7 +4119,7 @@
             }
           }
         },
-        "operationId": "getApiV1EmployeesByPersonId",
+        "operationId": "getApiV1PeopleByPersonId",
         "parameters": [
           {
             "schema": {
@@ -4160,11 +4187,14 @@
                     "status": {
                       "type": "string"
                     },
-                    "primaryPlantId": {
+                    "homePlantId": {
                       "type": "string",
                       "nullable": true
                     },
-                    "primaryPlant": {
+                    "personId": {
+                      "type": "string"
+                    },
+                    "homePlant": {
                       "type": "object",
                       "required": [
                         "id",
@@ -4199,7 +4229,8 @@
                     "personType",
                     "employer",
                     "jobTitle",
-                    "status"
+                    "status",
+                    "personId"
                   ]
                 }
               }
@@ -4314,7 +4345,7 @@
             }
           }
         },
-        "operationId": "patchApiV1EmployeesByPersonId",
+        "operationId": "patchApiV1PeopleByPersonId",
         "requestBody": {
           "required": true,
           "content": {
@@ -4322,7 +4353,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "primaryPlantId": {
+                  "homePlantId": {
                     "type": "string",
                     "nullable": true
                   },
@@ -4368,7 +4399,7 @@
         }
       }
     },
-    "/api/v1/employees/{personId}/history": {
+    "/api/v1/people/{personId}/history": {
       "get": {
         "responses": {
           "200": {
@@ -4533,7 +4564,7 @@
             }
           }
         },
-        "operationId": "getApiV1EmployeesByPersonIdHistory",
+        "operationId": "getApiV1PeopleByPersonIdHistory",
         "parameters": [
           {
             "schema": {
@@ -4546,9 +4577,9 @@
         ]
       }
     },
-    "/api/v1/employees/{personId}/export": {
+    "/api/v1/people/{personId}/export": {
       "get": {
-        "operationId": "getApiV1EmployeesByPersonIdExport",
+        "operationId": "getApiV1PeopleByPersonIdExport",
         "parameters": [
           {
             "schema": {
@@ -4581,7 +4612,7 @@
                       "items": {
                         "type": "object",
                         "required": [
-                          "employeeId",
+                          "personId",
                           "fullName",
                           "cpf",
                           "employer",
@@ -4589,7 +4620,7 @@
                           "records"
                         ],
                         "properties": {
-                          "employeeId": {
+                          "personId": {
                             "type": "string"
                           },
                           "fullName": {
@@ -4641,14 +4672,14 @@
                       "items": {
                         "type": "object",
                         "required": [
-                          "employeeId",
+                          "personId",
                           "fullName",
                           "cpf",
                           "presentDays",
                           "absences"
                         ],
                         "properties": {
-                          "employeeId": {
+                          "personId": {
                             "type": "string"
                           },
                           "fullName": {
@@ -4843,9 +4874,10 @@
                     "required": [
                       "id",
                       "openedAt",
+                      "elapsedMinutes",
                       "status",
                       "origin",
-                      "employee",
+                      "person",
                       "plant"
                     ],
                     "properties": {
@@ -4862,6 +4894,9 @@
                       "totalMinutes": {
                         "type": "number",
                         "nullable": true
+                      },
+                      "elapsedMinutes": {
+                        "type": "number"
                       },
                       "status": {
                         "type": "string"
@@ -4913,17 +4948,22 @@
                         "type": "string",
                         "nullable": true
                       },
-                      "employee": {
+                      "person": {
                         "type": "object",
                         "required": [
                           "id",
+                          "personId",
                           "fullName",
                           "cpf",
                           "personType",
-                          "employer"
+                          "employer",
+                          "jobTitle"
                         ],
                         "properties": {
                           "id": {
+                            "type": "string"
+                          },
+                          "personId": {
                             "type": "string"
                           },
                           "fullName": {
@@ -4936,6 +4976,9 @@
                             "type": "string"
                           },
                           "employer": {
+                            "type": "string"
+                          },
+                          "jobTitle": {
                             "type": "string"
                           }
                         }
@@ -5115,9 +5158,10 @@
                     "required": [
                       "id",
                       "openedAt",
+                      "elapsedMinutes",
                       "status",
                       "origin",
-                      "employee",
+                      "person",
                       "plant"
                     ],
                     "properties": {
@@ -5134,6 +5178,9 @@
                       "totalMinutes": {
                         "type": "number",
                         "nullable": true
+                      },
+                      "elapsedMinutes": {
+                        "type": "number"
                       },
                       "status": {
                         "type": "string"
@@ -5185,17 +5232,22 @@
                         "type": "string",
                         "nullable": true
                       },
-                      "employee": {
+                      "person": {
                         "type": "object",
                         "required": [
                           "id",
+                          "personId",
                           "fullName",
                           "cpf",
                           "personType",
-                          "employer"
+                          "employer",
+                          "jobTitle"
                         ],
                         "properties": {
                           "id": {
+                            "type": "string"
+                          },
+                          "personId": {
                             "type": "string"
                           },
                           "fullName": {
@@ -5208,6 +5260,9 @@
                             "type": "string"
                           },
                           "employer": {
+                            "type": "string"
+                          },
+                          "jobTitle": {
                             "type": "string"
                           }
                         }
@@ -5647,10 +5702,12 @@
                     "type": "string"
                   },
                   "wifiSsid": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "wifiBssid": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "geoLatitude": {
                     "type": "number"
@@ -5665,10 +5722,12 @@
                     }
                   },
                   "networkType": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "networkEffectiveType": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   }
                 }
               }
@@ -5727,6 +5786,7 @@
                       "type": "object",
                       "required": [
                         "id",
+                        "personId",
                         "fullName",
                         "cpf",
                         "personType",
@@ -5736,6 +5796,9 @@
                       ],
                       "properties": {
                         "id": {
+                          "type": "string"
+                        },
+                        "personId": {
                           "type": "string"
                         },
                         "fullName": {
@@ -6012,6 +6075,9 @@
                       "type": "number",
                       "nullable": true
                     },
+                    "elapsedMinutes": {
+                      "type": "number"
+                    },
                     "status": {
                       "type": "string"
                     },
@@ -6062,17 +6128,22 @@
                       "type": "string",
                       "nullable": true
                     },
-                    "employee": {
+                    "person": {
                       "type": "object",
                       "required": [
                         "id",
+                        "personId",
                         "fullName",
                         "cpf",
                         "personType",
-                        "employer"
+                        "employer",
+                        "jobTitle"
                       ],
                       "properties": {
                         "id": {
+                          "type": "string"
+                        },
+                        "personId": {
                           "type": "string"
                         },
                         "fullName": {
@@ -6085,6 +6156,9 @@
                           "type": "string"
                         },
                         "employer": {
+                          "type": "string"
+                        },
+                        "jobTitle": {
                           "type": "string"
                         }
                       }
@@ -6136,9 +6210,10 @@
                   "required": [
                     "id",
                     "openedAt",
+                    "elapsedMinutes",
                     "status",
                     "origin",
-                    "employee",
+                    "person",
                     "plant"
                   ]
                 }
@@ -6274,16 +6349,20 @@
                     "type": "string"
                   },
                   "fullName": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "employer": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "jobTitle": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "personType": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "email": {
                     "type": "string",
@@ -6302,19 +6381,24 @@
                     "nullable": true
                   },
                   "deviceIp": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "deviceLabel": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "wifiSsid": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "wifiBssid": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "selfieUrl": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "geoLatitude": {
                     "type": "number"
@@ -6323,10 +6407,12 @@
                     "type": "number"
                   },
                   "networkType": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "networkEffectiveType": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "browserIpCandidates": {
                     "type": "array",
@@ -6365,6 +6451,9 @@
                     "totalMinutes": {
                       "type": "number",
                       "nullable": true
+                    },
+                    "elapsedMinutes": {
+                      "type": "number"
                     },
                     "status": {
                       "type": "string"
@@ -6416,17 +6505,22 @@
                       "type": "string",
                       "nullable": true
                     },
-                    "employee": {
+                    "person": {
                       "type": "object",
                       "required": [
                         "id",
+                        "personId",
                         "fullName",
                         "cpf",
                         "personType",
-                        "employer"
+                        "employer",
+                        "jobTitle"
                       ],
                       "properties": {
                         "id": {
+                          "type": "string"
+                        },
+                        "personId": {
                           "type": "string"
                         },
                         "fullName": {
@@ -6439,6 +6533,9 @@
                           "type": "string"
                         },
                         "employer": {
+                          "type": "string"
+                        },
+                        "jobTitle": {
                           "type": "string"
                         }
                       }
@@ -6490,9 +6587,10 @@
                   "required": [
                     "id",
                     "openedAt",
+                    "elapsedMinutes",
                     "status",
                     "origin",
-                    "employee",
+                    "person",
                     "plant"
                   ]
                 }
@@ -6628,16 +6726,20 @@
                     "type": "string"
                   },
                   "deviceIp": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "wifiSsid": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "wifiBssid": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "selfieUrl": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "geoLatitude": {
                     "type": "number"
@@ -6646,10 +6748,12 @@
                     "type": "number"
                   },
                   "networkType": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "networkEffectiveType": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true
                   },
                   "browserIpCandidates": {
                     "type": "array",
@@ -6697,6 +6801,9 @@
                     "totalMinutes": {
                       "type": "number",
                       "nullable": true
+                    },
+                    "elapsedMinutes": {
+                      "type": "number"
                     },
                     "status": {
                       "type": "string"
@@ -6748,17 +6855,22 @@
                       "type": "string",
                       "nullable": true
                     },
-                    "employee": {
+                    "person": {
                       "type": "object",
                       "required": [
                         "id",
+                        "personId",
                         "fullName",
                         "cpf",
                         "personType",
-                        "employer"
+                        "employer",
+                        "jobTitle"
                       ],
                       "properties": {
                         "id": {
+                          "type": "string"
+                        },
+                        "personId": {
                           "type": "string"
                         },
                         "fullName": {
@@ -6771,6 +6883,9 @@
                           "type": "string"
                         },
                         "employer": {
+                          "type": "string"
+                        },
+                        "jobTitle": {
                           "type": "string"
                         }
                       }
@@ -6822,9 +6937,10 @@
                   "required": [
                     "id",
                     "openedAt",
+                    "elapsedMinutes",
                     "status",
                     "origin",
-                    "employee",
+                    "person",
                     "plant"
                   ]
                 }
@@ -6992,6 +7108,9 @@
                       "type": "number",
                       "nullable": true
                     },
+                    "elapsedMinutes": {
+                      "type": "number"
+                    },
                     "status": {
                       "type": "string"
                     },
@@ -7042,17 +7161,22 @@
                       "type": "string",
                       "nullable": true
                     },
-                    "employee": {
+                    "person": {
                       "type": "object",
                       "required": [
                         "id",
+                        "personId",
                         "fullName",
                         "cpf",
                         "personType",
-                        "employer"
+                        "employer",
+                        "jobTitle"
                       ],
                       "properties": {
                         "id": {
+                          "type": "string"
+                        },
+                        "personId": {
                           "type": "string"
                         },
                         "fullName": {
@@ -7065,6 +7189,9 @@
                           "type": "string"
                         },
                         "employer": {
+                          "type": "string"
+                        },
+                        "jobTitle": {
                           "type": "string"
                         }
                       }
@@ -7116,9 +7243,10 @@
                   "required": [
                     "id",
                     "openedAt",
+                    "elapsedMinutes",
                     "status",
                     "origin",
-                    "employee",
+                    "person",
                     "plant"
                   ]
                 }
@@ -7409,7 +7537,7 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "activeEmployees": {
+                    "activePeople": {
                       "type": "number"
                     },
                     "openEntries": {
@@ -7418,10 +7546,10 @@
                     "recordsToday": {
                       "type": "number"
                     },
-                    "plantsOnline": {
+                    "plantsWithActivityToday": {
                       "type": "number"
                     },
-                    "employeesWithoutExit": {
+                    "peopleWithoutExit": {
                       "type": "number"
                     },
                     "hoursByPlantToday": {
@@ -7482,7 +7610,7 @@
                         "type": "object",
                         "required": [
                           "id",
-                          "employeeName",
+                          "personName",
                           "plantName",
                           "minutesOpen"
                         ],
@@ -7490,7 +7618,7 @@
                           "id": {
                             "type": "string"
                           },
-                          "employeeName": {
+                          "personName": {
                             "type": "string"
                           },
                           "plantName": {
@@ -7508,17 +7636,18 @@
                         "type": "object",
                         "required": [
                           "id",
-                          "employeeName",
+                          "personName",
                           "personType",
                           "plantName",
                           "openedAt",
+                          "elapsedMinutes",
                           "status"
                         ],
                         "properties": {
                           "id": {
                             "type": "string"
                           },
-                          "employeeName": {
+                          "personName": {
                             "type": "string"
                           },
                           "personType": {
@@ -7530,6 +7659,9 @@
                           "openedAt": {
                             "type": "string"
                           },
+                          "elapsedMinutes": {
+                            "type": "number"
+                          },
                           "status": {
                             "type": "string"
                           }
@@ -7538,11 +7670,11 @@
                     }
                   },
                   "required": [
-                    "activeEmployees",
+                    "activePeople",
                     "openEntries",
                     "recordsToday",
-                    "plantsOnline",
-                    "employeesWithoutExit",
+                    "plantsWithActivityToday",
+                    "peopleWithoutExit",
                     "hoursByPlantToday",
                     "presenceRanking",
                     "overtimeAlerts",

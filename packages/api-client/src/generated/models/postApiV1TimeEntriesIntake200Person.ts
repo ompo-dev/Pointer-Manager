@@ -11,6 +11,7 @@
  */
 export type PostApiV1TimeEntriesIntake200Person = {
   id: string;
+  personId: string;
   fullName: string;
   cpf: string;
   personType: string;

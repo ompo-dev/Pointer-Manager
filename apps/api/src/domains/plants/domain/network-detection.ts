@@ -272,7 +272,9 @@ function formatConnectionLabel(
   }
 
   if (connectionKind === "ethernet") {
-    return `Rede cabeada${interfaceName ? ` (${interfaceName})` : ""}`;
+    return ssid
+      ? `Rede cabeada ${ssid}${interfaceName ? ` (${interfaceName})` : ""}`
+      : `Rede cabeada${interfaceName ? ` (${interfaceName})` : ""}`;
   }
 
   if (connectionKind === "mobile") {
@@ -295,7 +297,11 @@ function buildCandidateNotes(
   ];
 
   if (connectionKind === "ethernet") {
-    parts.push("Conexao cabeada detectada. SSID e BSSID nao se aplicam.");
+    parts.push(
+      ssid || bssid
+        ? `Conexao cabeada detectada na mesma rede do Wi-Fi${ssid ? ` ${ssid}` : ""}.`
+        : "Conexao cabeada detectada. SSID e BSSID nao puderam ser associados automaticamente.",
+    );
   }
 
   if (connectionKind === "wifi") {
@@ -442,7 +448,51 @@ function inspectHostNetworkCandidates() {
     });
   }
 
-  return candidates.sort((left, right) => left.label.localeCompare(right.label, "pt-BR"));
+  const wifiIdentityCandidates = candidates.filter(
+    (candidate) =>
+      candidate.connectionKind === "wifi" &&
+      Boolean(candidate.ssid || candidate.bssid),
+  );
+
+  const enrichedCandidates = candidates.map((candidate) => {
+    if (candidate.connectionKind !== "ethernet" || candidate.ssid || candidate.bssid) {
+      return candidate;
+    }
+
+    const relatedWifiCandidate =
+      wifiIdentityCandidates.find((wifiCandidate) =>
+        sameIpv4Subnet(wifiCandidate.ipAddress, candidate.ipAddress),
+      ) ??
+      (wifiIdentityCandidates.length === 1 ? wifiIdentityCandidates[0] : null);
+
+    if (!relatedWifiCandidate) {
+      return candidate;
+    }
+
+    const inheritedSsid = relatedWifiCandidate.ssid ?? null;
+    const inheritedBssid = relatedWifiCandidate.bssid ?? null;
+
+    return {
+      ...candidate,
+      label: formatConnectionLabel(
+        candidate.connectionKind,
+        candidate.interfaceName,
+        inheritedSsid,
+        candidate.ipAddress,
+      ),
+      ssid: inheritedSsid,
+      bssid: inheritedBssid,
+      notes: buildCandidateNotes(
+        candidate.connectionKind,
+        candidate.source,
+        candidate.interfaceName,
+        inheritedSsid,
+        inheritedBssid,
+      ),
+    } satisfies DetectedPlantNetworkCandidate;
+  });
+
+  return enrichedCandidates.sort((left, right) => left.label.localeCompare(right.label, "pt-BR"));
 }
 
 function buildRequestCandidate(

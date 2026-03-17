@@ -94,7 +94,7 @@ export const plantSchema = t.Object({
   authorizedNetworks: t.Array(authorizedNetworkSchema),
   _count: t.Optional(
     t.Object({
-      employees: t.Number(),
+      people: t.Number(),
       timeEntries: t.Number(),
     }),
   ),
@@ -129,7 +129,13 @@ export const plantDetailSchema = t.Object({
     t.Object({
       id: t.String(),
       openedAt: t.String(),
-      employee: plantPersonSchema,
+      person: t.Object({
+        id: t.String(),
+        personId: t.String(),
+        fullName: t.String(),
+        cpf: t.String(),
+        personType: t.String(),
+      }),
     }),
   ),
   history: t.Array(
@@ -139,7 +145,13 @@ export const plantDetailSchema = t.Object({
       closedAt: t.Optional(nullableString),
       status: t.String(),
       totalMinutes: t.Optional(nullableNumber),
-      employee: plantPersonSchema,
+      person: t.Object({
+        id: t.String(),
+        personId: t.String(),
+        fullName: t.String(),
+        cpf: t.String(),
+        personType: t.String(),
+      }),
     }),
   ),
 });
@@ -156,12 +168,13 @@ const personBaseProperties = {
   photoUrl: t.Optional(nullableString),
   notes: t.Optional(nullableString),
   status: t.String(),
-  primaryPlantId: t.Optional(nullableString),
+  homePlantId: t.Optional(nullableString),
+  personId: t.String(),
 };
 
 export const personSchema = t.Object({
   ...personBaseProperties,
-  primaryPlant: t.Optional(
+  homePlant: t.Optional(
     t.Union([
       t.Object({
         id: t.String(),
@@ -179,7 +192,7 @@ export const personSchema = t.Object({
 
 export const personDetailSchema = t.Object({
   ...personBaseProperties,
-  primaryPlant: t.Optional(
+  homePlant: t.Optional(
     t.Union([
       t.Object({
         id: t.String(),
@@ -206,6 +219,7 @@ export const personDetailSchema = t.Object({
 
 export const accessPersonSchema = t.Object({
   id: t.String(),
+  personId: t.String(),
   fullName: t.String(),
   cpf: t.String(),
   personType: t.String(),
@@ -292,6 +306,7 @@ export const timeEntrySchema = t.Object({
   openedAt: t.String(),
   closedAt: t.Optional(nullableString),
   totalMinutes: t.Optional(nullableNumber),
+  elapsedMinutes: t.Number(),
   status: t.String(),
   origin: t.String(),
   deviceIp: t.Optional(nullableString),
@@ -305,12 +320,14 @@ export const timeEntrySchema = t.Object({
   validationNotes: t.Optional(nullableString),
   notes: t.Optional(nullableString),
   closedReason: t.Optional(nullableString),
-  employee: t.Object({
+  person: t.Object({
     id: t.String(),
+    personId: t.String(),
     fullName: t.String(),
     cpf: t.String(),
     personType: t.String(),
     employer: t.String(),
+    jobTitle: t.String(),
   }),
   plant: t.Object({
     id: t.String(),
@@ -331,11 +348,11 @@ export const timeEntrySchema = t.Object({
 });
 
 export const dashboardOverviewSchema = t.Object({
-  activeEmployees: t.Number(),
+  activePeople: t.Number(),
   openEntries: t.Number(),
   recordsToday: t.Number(),
-  plantsOnline: t.Number(),
-  employeesWithoutExit: t.Number(),
+  plantsWithActivityToday: t.Number(),
+  peopleWithoutExit: t.Number(),
   hoursByPlantToday: t.Array(
     t.Object({
       plantId: t.String(),
@@ -355,7 +372,7 @@ export const dashboardOverviewSchema = t.Object({
   overtimeAlerts: t.Array(
     t.Object({
       id: t.String(),
-      employeeName: t.String(),
+      personName: t.String(),
       plantName: t.String(),
       minutesOpen: t.Number(),
     }),
@@ -363,10 +380,11 @@ export const dashboardOverviewSchema = t.Object({
   liveEntries: t.Array(
     t.Object({
       id: t.String(),
-      employeeName: t.String(),
+      personName: t.String(),
       personType: t.String(),
       plantName: t.String(),
       openedAt: t.String(),
+      elapsedMinutes: t.Number(),
       status: t.String(),
     }),
   ),
@@ -375,7 +393,7 @@ export const dashboardOverviewSchema = t.Object({
 export const reportsSummarySchema = t.Object({
   hoursByPerson: t.Array(
     t.Object({
-      employeeId: t.String(),
+      personId: t.String(),
       fullName: t.String(),
       cpf: t.String(),
       employer: t.String(),
@@ -393,7 +411,7 @@ export const reportsSummarySchema = t.Object({
   ),
   presence: t.Array(
     t.Object({
-      employeeId: t.String(),
+      personId: t.String(),
       fullName: t.String(),
       cpf: t.String(),
       presentDays: t.Number(),
