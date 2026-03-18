@@ -104,6 +104,10 @@ export function PlantsScreen() {
     "status",
     parseAsString.withDefault("ALL"),
   );
+  const [panelPlantId, setPanelPlantId] = useQueryState(
+    "plant",
+    parseAsString.withDefault(""),
+  );
   const [plantId, setPlantId] = useQueryState("plantId", parseAsString);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [hasSeededInitialSelection, setHasSeededInitialSelection] =
@@ -152,6 +156,8 @@ export function PlantsScreen() {
   const [loadingStates, setLoadingStates] = useState(false);
   const [cityOptions, setCityOptions] = useState<SearchableOption[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
+  const activePlantId =
+    !isCreatingNew ? ((plantId ?? panelPlantId) || null) : null;
 
   const selectedDetectedCandidate = useMemo(
     () =>
@@ -268,7 +274,7 @@ export function PlantsScreen() {
   );
 
   useEffect(() => {
-    if (plantId || isCreatingNew) {
+    if (activePlantId || isCreatingNew) {
       if (!hasSeededInitialSelection) {
         setHasSeededInitialSelection(true);
       }
@@ -279,7 +285,35 @@ export function PlantsScreen() {
       setHasSeededInitialSelection(true);
       void setPlantId(plants[0].id);
     }
-  }, [hasSeededInitialSelection, isCreatingNew, plantId, plants, setPlantId]);
+  }, [activePlantId, hasSeededInitialSelection, isCreatingNew, plants, setPlantId]);
+
+  useEffect(() => {
+    if (isCreatingNew || plantId || !panelPlantId) {
+      return;
+    }
+
+    void setPlantId(panelPlantId);
+  }, [isCreatingNew, panelPlantId, plantId, setPlantId]);
+
+  useEffect(() => {
+    if (isCreatingNew || !plantId || panelPlantId === plantId) {
+      return;
+    }
+
+    void setPanelPlantId(plantId);
+  }, [isCreatingNew, panelPlantId, plantId, setPanelPlantId]);
+
+  useEffect(() => {
+    void usePlantsStore.getState().loadPlants({ search, status });
+  }, [search, status]);
+
+  useEffect(() => {
+    if (isCreatingNew) {
+      return;
+    }
+
+    void usePlantsStore.getState().loadPlant(activePlantId);
+  }, [activePlantId, isCreatingNew]);
 
   useEffect(() => {
     let cancelled = false;
@@ -362,13 +396,14 @@ export function PlantsScreen() {
   useEffect(() => {
     void detectCurrentNetwork();
     void detectCurrentLocation();
-  }, [detectCurrentLocation, detectCurrentNetwork, plantId]);
+  }, [activePlantId, detectCurrentLocation, detectCurrentNetwork]);
 
   const handleSavePlant = async () => {
     const savedId = await savePlant();
     if (savedId) {
       setIsCreatingNew(false);
       void setPlantId(savedId);
+      void setPanelPlantId(savedId);
     }
   };
 
@@ -544,16 +579,18 @@ export function PlantsScreen() {
               getRowId={(plant) => plant.id}
               queryStateScope="plantsList"
               onRowClick={(plant) => {
-                if (!isCreatingNew && plant.id === plantId) {
+                if (!isCreatingNew && plant.id === activePlantId) {
                   resetForm();
                   void setPlantId(null);
+                  void setPanelPlantId(null);
                   return;
                 }
 
                 setIsCreatingNew(false);
                 void setPlantId(plant.id);
+                void setPanelPlantId(plant.id);
               }}
-              isRowActive={(plant) => plant.id === plantId}
+              isRowActive={(plant) => plant.id === activePlantId}
               toolbar={
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px_auto]">
                   <Input
@@ -590,7 +627,7 @@ export function PlantsScreen() {
                   </div>
                 ) : null
               }
-              expandedRowId={!isCreatingNew ? plantId : null}
+              expandedRowId={!isCreatingNew ? activePlantId : null}
               getDetailTitle={(row) => row.name}
               getDetailDescription={(row) => `${row.city} - ${row.state}`}
               renderInlineDetails={(row) => (
