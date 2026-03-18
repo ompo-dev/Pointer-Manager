@@ -10,9 +10,9 @@
     "axios": "^1.13.6"
   },
   "scripts": {
-    "generate": "bun run --cwd ../../scripts openapi && bunx orval --config ./orval.config.ts",
+    "generate": "cd ../.. && bun run --cwd scripts openapi && node ./node_modules/orval/dist/bin/orval.js --config ./packages/api-client/orval.config.ts",
     "build": "bun run generate",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "cd ../.. && node ./node_modules/typescript/lib/tsc.js -p packages/api-client/tsconfig.json --noEmit"
   },
   "devDependencies": {
     "orval": "^7.8.0",

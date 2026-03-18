@@ -135,8 +135,25 @@ type PublicDeviceResolutionInput = Pick<
   | "networkType"
 >;
 
-function isLoopbackIp(value?: string | null) {
-  return value === "127.0.0.1" || value === "::1";
+function isPrivateLanIpv4(value?: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  const parts = value.split(".").map((part) => Number.parseInt(part, 10));
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) {
+    return false;
+  }
+
+  if (parts[0] === 10) {
+    return true;
+  }
+
+  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) {
+    return true;
+  }
+
+  return parts[0] === 192 && parts[1] === 168;
 }
 
 function calculateElapsedMinutes(openedAt: Date, totalMinutes?: number | null, closedAt?: Date | null) {
@@ -286,18 +303,26 @@ export class TimeEntriesService {
       browserConnectionType: input.networkType,
     });
 
-    const resolvedDeviceIp =
-      input.deviceIp && !isLoopbackIp(input.deviceIp)
-        ? input.deviceIp
-        : networkDetection.ipAddress ?? input.deviceIp ?? null;
+    const resolvedPublicIp = networkDetection.observedPublicIp;
+    const hasTrustedLocalHint =
+      isPrivateLanIpv4(input.deviceIp) ||
+      (input.browserIpCandidates ?? []).some((candidate) => isPrivateLanIpv4(candidate));
+    const resolvedLocalIp = hasTrustedLocalHint ? networkDetection.localIpAddress : null;
+    const resolvedDeviceIp = resolvedLocalIp ?? resolvedPublicIp ?? null;
     const resolvedWifiSsid = input.wifiSsid ?? networkDetection.ssid ?? null;
     const resolvedWifiBssid = input.wifiBssid ?? networkDetection.bssid ?? null;
+    const resolvedCurrentLocalNetworkName = hasTrustedLocalHint
+      ? networkDetection.localCandidates.find((candidate) => candidate.isCurrent)?.label ?? null
+      : null;
     const resolvedCurrentNetworkName =
       networkDetection.ssid ??
-      networkDetection.candidates.find((candidate) => candidate.isCurrent)?.label ??
+      resolvedCurrentLocalNetworkName ??
+      (resolvedPublicIp ? `Saida publica (${resolvedPublicIp})` : null) ??
       null;
 
     return {
+      observedPublicIp: resolvedPublicIp,
+      localDeviceIp: resolvedLocalIp,
       deviceIp: resolvedDeviceIp,
       wifiSsid: resolvedWifiSsid,
       wifiBssid: resolvedWifiBssid,
@@ -837,7 +862,8 @@ export class TimeEntriesService {
     const deviceContext = this.resolvePublicDeviceContext(input);
     const evaluation = evaluatePlantNetworkAccess(plant, {
       ...input,
-      deviceIp: deviceContext.deviceIp,
+      observedPublicIp: deviceContext.observedPublicIp,
+      localDeviceIp: deviceContext.localDeviceIp,
       wifiSsid: deviceContext.wifiSsid,
       wifiBssid: deviceContext.wifiBssid,
     });
@@ -860,7 +886,8 @@ export class TimeEntriesService {
         status: evaluation.status,
         reason: evaluation.reason,
         message: evaluation.message,
-        observedIp: evaluation.observedIp,
+        observedPublicIp: evaluation.observedPublicIp,
+        observedLocalIp: evaluation.observedLocalIp,
         currentNetworkName: evaluation.currentNetworkName ?? deviceContext.currentNetworkName,
         matched: evaluation.matched,
         matchedBy: evaluation.matchedBy,
@@ -891,7 +918,8 @@ export class TimeEntriesService {
     const deviceContext = this.resolvePublicDeviceContext(input);
     const validation = validatePlantAccess(plant, {
       ...input,
-      deviceIp: deviceContext.deviceIp,
+      observedPublicIp: deviceContext.observedPublicIp,
+      localDeviceIp: deviceContext.localDeviceIp,
       wifiSsid: deviceContext.wifiSsid,
       wifiBssid: deviceContext.wifiBssid,
     });
@@ -997,7 +1025,8 @@ export class TimeEntriesService {
     const deviceContext = this.resolvePublicDeviceContext(input);
     const validation = validatePlantAccess(plant, {
       ...input,
-      deviceIp: deviceContext.deviceIp,
+      observedPublicIp: deviceContext.observedPublicIp,
+      localDeviceIp: deviceContext.localDeviceIp,
       wifiSsid: deviceContext.wifiSsid,
       wifiBssid: deviceContext.wifiBssid,
     });

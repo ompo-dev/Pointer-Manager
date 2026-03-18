@@ -51,7 +51,8 @@ export const authorizedNetworkSchema = t.Object({
   name: t.String(),
   ssid: t.Optional(nullableString),
   bssid: t.Optional(nullableString),
-  ipv4Cidr: t.Optional(nullableString),
+  publicIpv4Cidr: t.Optional(nullableString),
+  localIpv4Cidr: t.Optional(nullableString),
   notes: t.Optional(nullableString),
 });
 
@@ -60,8 +61,8 @@ export const detectedPlantNetworkCandidateSchema = t.Object({
   label: t.String(),
   connectionKind: t.String(),
   interfaceName: nullableString,
-  ipAddress: nullableString,
-  suggestedIpv4Cidr: nullableString,
+  localIpAddress: nullableString,
+  localIpv4Cidr: nullableString,
   ssid: nullableString,
   bssid: nullableString,
   source: t.String(),
@@ -101,18 +102,20 @@ export const plantSchema = t.Object({
 });
 
 export const detectedPlantNetworkSchema = t.Object({
-  requestIp: nullableString,
+  observedPublicIp: nullableString,
+  suggestedPublicIpv4Cidr: nullableString,
   selectedCandidateId: nullableString,
-  ipAddress: nullableString,
-  suggestedIpv4Cidr: nullableString,
+  localIpAddress: nullableString,
+  localIpv4Cidr: nullableString,
   interfaceName: nullableString,
   connectionKind: nullableString,
   ssid: nullableString,
   bssid: nullableString,
   source: nullableString,
+  confidence: t.String(),
   canAutoReadWifiIdentity: t.Boolean(),
   notes: t.String(),
-  candidates: t.Array(detectedPlantNetworkCandidateSchema),
+  localCandidates: t.Array(detectedPlantNetworkCandidateSchema),
 });
 
 const plantPersonSchema = t.Object({
@@ -281,7 +284,8 @@ export const accessNetworkStatusSchema = t.Object({
     status: t.String(),
     reason: t.String(),
     message: t.String(),
-    observedIp: nullableString,
+    observedPublicIp: nullableString,
+    observedLocalIp: nullableString,
     currentNetworkName: nullableString,
     matched: t.Boolean(),
     matchedBy: t.Union([t.String(), t.Null()]),

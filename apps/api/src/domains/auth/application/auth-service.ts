@@ -138,7 +138,9 @@ export class AuthService {
     if (!signInResponse.ok || !signInPayload?.user) {
       const status = signInResponse.status || 401;
       throw new DomainError(
-        status === 401 ? "Credenciais invÃ¡lidas." : signInPayload?.message ?? "Falha ao autenticar.",
+        status === 401
+          ? "Credenciais invalidas."
+          : signInPayload?.message ?? "Falha ao autenticar.",
         status,
       );
     }
@@ -179,7 +181,7 @@ export class AuthService {
 
   async requireUser(authorizationHeader?: string) {
     if (!authorizationHeader?.startsWith("Bearer ")) {
-      throw new DomainError("Token nÃ£o informado.", 401);
+      throw new DomainError("Token nao informado.", 401);
     }
 
     const token = authorizationHeader.slice("Bearer ".length);

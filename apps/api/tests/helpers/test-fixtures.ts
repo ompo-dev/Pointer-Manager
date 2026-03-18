@@ -18,9 +18,11 @@ export interface TestFixture {
   organizationId: string;
   plantId: string;
   plantToken: string;
+  plantPublicIp: string;
+  plantPublicCidr: string;
   plantWifiSsid: string;
   plantWifiBssid: string;
-  plantWifiCidr: string;
+  plantLocalCidr: string;
   userId: string;
   userEmail: string;
   userPassword: string;
@@ -40,7 +42,10 @@ export async function createFixture(): Promise<TestFixture> {
 
   const plantWifiSsid = `SSID-${suffix}`;
   const plantWifiBssid = `AA:BB:CC:${suffix.slice(0, 2)}:${suffix.slice(2, 4)}:${suffix.slice(4, 6)}`;
-  const plantWifiCidr = "10.10.0.0/24";
+  const publicOctet = 10 + (Number.parseInt(suffix.slice(0, 2), 16) % 200);
+  const plantPublicIp = `203.0.113.${publicOctet}`;
+  const plantPublicCidr = `${plantPublicIp}/32`;
+  const plantLocalCidr = "10.10.0.0/24";
 
   const plant = await prisma.plant.create({
     data: {
@@ -55,9 +60,10 @@ export async function createFixture(): Promise<TestFixture> {
       authorizedNetworks: {
         create: {
           name: `Network ${suffix}`,
+          publicIpv4Cidr: plantPublicCidr,
           ssid: plantWifiSsid,
           bssid: plantWifiBssid,
-          ipv4Cidr: plantWifiCidr,
+          localIpv4Cidr: plantLocalCidr,
         },
       },
     },
@@ -107,9 +113,11 @@ export async function createFixture(): Promise<TestFixture> {
     organizationId: organization.id,
     plantId: plant.id,
     plantToken: plant.qrToken,
+    plantPublicIp,
+    plantPublicCidr,
     plantWifiSsid,
     plantWifiBssid,
-    plantWifiCidr,
+    plantLocalCidr,
     userId: user.id,
     userEmail: user.email,
     userPassword,

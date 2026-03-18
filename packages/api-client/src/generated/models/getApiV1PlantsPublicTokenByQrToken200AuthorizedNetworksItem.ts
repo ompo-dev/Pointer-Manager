@@ -14,7 +14,9 @@ export type GetApiV1PlantsPublicTokenByQrToken200AuthorizedNetworksItem = {
   /** @nullable */
   bssid?: string | null;
   /** @nullable */
-  ipv4Cidr?: string | null;
+  publicIpv4Cidr?: string | null;
+  /** @nullable */
+  localIpv4Cidr?: string | null;
   /** @nullable */
   notes?: string | null;
 };

@@ -48,11 +48,17 @@ type PresentPersonRow = PlantDetails["presentPeople"][number];
 type PlantHistoryRow = PlantDetails["history"][number];
 
 function networkNeedsRepair(network: {
+  publicIpv4Cidr?: string | null;
+  localIpv4Cidr?: string | null;
   ssid?: string | null;
   bssid?: string | null;
-  ipv4Cidr?: string | null;
 }) {
-  return !network.ssid && !network.bssid && !network.ipv4Cidr;
+  return (
+    !network.publicIpv4Cidr &&
+    !network.localIpv4Cidr &&
+    !network.ssid &&
+    !network.bssid
+  );
 }
 
 function buildComparablePlantForm(plant?: PlantDetails | Plant | null) {
@@ -79,9 +85,10 @@ function buildComparablePlantForm(plant?: PlantDetails | Plant | null) {
     authorizedNetworks: (plant.authorizedNetworks ?? []).map((network) => ({
       id: network.id,
       name: network.name,
+      publicIpv4Cidr: network.publicIpv4Cidr ?? "",
+      localIpv4Cidr: network.localIpv4Cidr ?? "",
       ssid: network.ssid ?? "",
       bssid: network.bssid ?? "",
-      ipv4Cidr: network.ipv4Cidr ?? "",
       notes: network.notes ?? "",
     })),
   };
@@ -148,11 +155,11 @@ export function PlantsScreen() {
 
   const selectedDetectedCandidate = useMemo(
     () =>
-      detectedNetwork?.candidates.find(
+      detectedNetwork?.localCandidates.find(
         (candidate) => candidate.id === selectedDetectedCandidateId,
       ) ??
-      detectedNetwork?.candidates.find((candidate) => candidate.isCurrent) ??
-      detectedNetwork?.candidates[0] ??
+      detectedNetwork?.localCandidates.find((candidate) => candidate.isCurrent) ??
+      detectedNetwork?.localCandidates[0] ??
       null,
     [detectedNetwork, selectedDetectedCandidateId],
   );
@@ -525,8 +532,8 @@ export function PlantsScreen() {
         <Card>
           <CardHeader>
             <CardTitle>Usinas</CardTitle>
-            <CardDescription>
-              Cadastro, QRCode, redes autorizadas, geofence e politicas de
+          <CardDescription>
+              Cadastro, QRCode, ambientes autorizados, geofence e politicas de
               fechamento.
             </CardDescription>
           </CardHeader>
@@ -645,7 +652,7 @@ export function PlantsScreen() {
                               <div className="mt-2 space-y-2 text-sm">
                                 <p className="inline-flex items-center gap-2">
                                   <CheckCircle2 className="size-4 text-muted-foreground" />
-                                  Wi-Fi:{" "}
+                                  Ambiente de rede:{" "}
                                   {selectedPlant.requireWifiMatch
                                     ? "obrigatorio"
                                     : "livre"}
@@ -675,17 +682,17 @@ export function PlantsScreen() {
                           <div className="min-w-0 rounded-2xl border border-border bg-card p-4">
                             <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                               <Network className="size-4" />
-                              Redes autorizadas
+                              Ambientes autorizados
                             </p>
                             <div className="mt-3 space-y-2">
                               {selectedPlant.authorizedNetworks.length === 0 ? (
                                 <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-4 text-sm text-muted-foreground">
-                                  Nenhuma rede autorizada salva nesta usina.
+                                  Nenhum ambiente autorizado salvo nesta usina.
                                 </div>
                               ) : (
                                 selectedPlant.authorizedNetworks.map((network) => (
                                   <div
-                                    key={`${network.name}-${network.ssid ?? network.ipv4Cidr ?? "network"}`}
+                                    key={`${network.name}-${network.publicIpv4Cidr ?? network.localIpv4Cidr ?? network.ssid ?? "network"}`}
                                     className="rounded-2xl border border-border bg-background px-4 py-3 text-sm"
                                   >
                                     <p className="font-semibold">
@@ -693,16 +700,22 @@ export function PlantsScreen() {
                                     </p>
                                     {networkNeedsRepair(network) ? (
                                       <p className="break-words text-amber-700">
-                                        Cadastro antigo/incompleto. Atualize a
+                                        Cadastro legado/incompleto. Atualize a
                                         deteccao automatica e salve a usina
-                                        novamente para corrigir a rede.
+                                        novamente para incluir a saida publica.
                                       </p>
                                     ) : (
-                                      <p className="break-words text-muted-foreground">
-                                        {network.ssid || network.bssid
-                                          ? `${network.ssid || "-"} | ${network.bssid || "-"} | ${network.ipv4Cidr || "-"}`
-                                          : `Conexao cabeada ou sem identificacao Wi-Fi | ${network.ipv4Cidr || "-"}`}
-                                      </p>
+                                      <div className="space-y-1 break-words text-muted-foreground">
+                                        <p>
+                                          Saida publica: {network.publicIpv4Cidr || "-"}
+                                        </p>
+                                        <p>
+                                          LAN local: {network.localIpv4Cidr || "-"}
+                                        </p>
+                                        <p>
+                                          Wi-Fi: {network.ssid || "-"} | {network.bssid || "-"}
+                                        </p>
+                                      </div>
                                     )}
                                   </div>
                                 ))

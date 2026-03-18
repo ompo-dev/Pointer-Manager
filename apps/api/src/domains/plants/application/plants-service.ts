@@ -36,7 +36,8 @@ interface UpsertPlantInput {
     name: string;
     ssid?: string | null;
     bssid?: string | null;
-    ipv4Cidr?: string | null;
+    publicIpv4Cidr?: string | null;
+    localIpv4Cidr?: string | null;
     notes?: string | null;
   }>;
 }
@@ -172,7 +173,8 @@ function serializePlantListItem(
       name: string;
       ssid: string | null;
       bssid: string | null;
-      ipv4Cidr: string | null;
+      publicIpv4Cidr: string | null;
+      localIpv4Cidr: string | null;
       notes: string | null;
       isActive: boolean;
       createdAt: Date;
@@ -329,7 +331,8 @@ export class PlantsService {
                 name: network.name,
                 ssid: network.ssid ?? null,
                 bssid: network.bssid ?? null,
-                ipv4Cidr: network.ipv4Cidr ?? null,
+                publicIpv4Cidr: network.publicIpv4Cidr ?? null,
+                localIpv4Cidr: network.localIpv4Cidr ?? null,
                 notes: network.notes ?? null,
               })),
             }
@@ -427,7 +430,8 @@ export class PlantsService {
                   name: network.name,
                   ssid: network.ssid ?? null,
                   bssid: network.bssid ?? null,
-                  ipv4Cidr: network.ipv4Cidr ?? null,
+                  publicIpv4Cidr: network.publicIpv4Cidr ?? null,
+                  localIpv4Cidr: network.localIpv4Cidr ?? null,
                   notes: network.notes ?? null,
                 })),
               }

@@ -128,10 +128,11 @@ export interface AccessNetworkStatus {
     status: "AUTHORIZED" | "BLOCKED" | "OPEN";
     reason: "authorized" | "network" | "cellular" | "open";
     message: string;
-    observedIp: string | null;
+    observedPublicIp: string | null;
+    observedLocalIp: string | null;
     currentNetworkName: string | null;
     matched: boolean;
-    matchedBy: "ssid" | "bssid" | "cidr" | null;
+    matchedBy: "public-ip" | "local-cidr" | "ssid" | "bssid" | null;
     matchedNetworkName: string | null;
     browserHintIgnored: boolean;
   };

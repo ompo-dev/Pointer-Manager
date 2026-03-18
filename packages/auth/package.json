@@ -8,8 +8,8 @@
     "./server": "./src/server.ts"
   },
   "scripts": {
-    "build": "bunx tsc --noEmit",
-    "typecheck": "bunx tsc --noEmit"
+    "build": "cd ../.. && node ./node_modules/typescript/lib/tsc.js -p packages/auth/tsconfig.json --noEmit",
+    "typecheck": "cd ../.. && node ./node_modules/typescript/lib/tsc.js -p packages/auth/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.5.5",

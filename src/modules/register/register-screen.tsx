@@ -382,7 +382,7 @@ export function RegisterScreen() {
                   <p className="inline-flex items-center gap-2">
                     <Wifi className="size-4 text-muted" />
                     {plant?.requireWifiMatch
-                      ? "Wi-Fi autorizado obrigatorio"
+                      ? "Ambiente de rede autorizado obrigatorio"
                       : "Rede livre"}
                   </p>
                   <p className="inline-flex items-center gap-2">
@@ -436,17 +436,21 @@ export function RegisterScreen() {
                     </p>
                     <div className="space-y-1 text-sm text-foreground/80">
                       <p>
-                        Conexao detectada:{" "}
+                        Ambiente detectado:{" "}
                         {networkStatus?.currentNetworkName ??
                           networkStatus?.matchedNetworkName ??
                           "nao identificada"}
                       </p>
                       <p>
-                        IP observado:{" "}
-                        {networkStatus?.observedIp ?? "nao identificado"}
+                        IP publico observado:{" "}
+                        {networkStatus?.observedPublicIp ?? "nao identificado"}
                       </p>
                       <p>
-                        Rede autorizada:{" "}
+                        IP local observado:{" "}
+                        {networkStatus?.observedLocalIp ?? "nao identificado"}
+                      </p>
+                      <p>
+                        Ambiente autorizado:{" "}
                         {networkStatus?.matchedNetworkName ??
                           "sem correspondencia"}
                       </p>
@@ -797,8 +801,8 @@ export function RegisterScreen() {
                 <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
                   <ShieldCheck className="size-4" />
                   {plant?.requireWifiMatch
-                    ? "Rede e geolocalizacao continuam sendo validadas pelo backend ate a confirmacao final."
-                    : "Acesso sem restricao de Wi-Fi para esta usina."}
+                    ? "O ambiente de rede e a geolocalizacao continuam sendo validados pelo backend ate a confirmacao final."
+                    : "Acesso sem restricao de ambiente de rede para esta usina."}
                 </div>
 
                 {networkStatus ? (

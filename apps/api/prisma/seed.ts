@@ -49,9 +49,10 @@ type PlantSeed = {
   geofenceRadiusMeters?: number;
   authorizedNetworks: Array<{
     name: string;
+    publicIpv4Cidr?: string;
+    localIpv4Cidr?: string;
     ssid?: string;
     bssid?: string;
-    ipv4Cidr?: string;
     notes?: string;
     isActive?: boolean;
   }>;
@@ -95,7 +96,17 @@ type CreatedOrganizationContext = {
   organizationId: string;
   organizationCode: string;
   organizationName: string;
-  plantsByCode: Map<string, Plant & { authorizedNetworks: Array<{ ssid: string | null; bssid: string | null; ipv4Cidr: string | null }> }>;
+  plantsByCode: Map<
+    string,
+    Plant & {
+      authorizedNetworks: Array<{
+        ssid: string | null;
+        bssid: string | null;
+        publicIpv4Cidr: string | null;
+        localIpv4Cidr: string | null;
+      }>;
+    }
+  >;
   usersByEmail: Map<string, User>;
   profiles: Array<AccessProfile & { person: { id: string; cpf: string; fullName: string } }>;
 };
@@ -296,8 +307,8 @@ const organizationSeeds: OrganizationSeed[] = [
         autoCloseLimitHours: 14,
         lateAlertMinutes: 120,
         authorizedNetworks: [
-          { name: "WiFi Operacao Norte", ssid: "USINA_NORTE_01", bssid: "AA:01:10:00:00:01", ipv4Cidr: "10.11.0.0/24", notes: "Rede principal de operacao e acesso QR." },
-          { name: "Rede Cabeada Norte", ipv4Cidr: "10.11.10.0/24", notes: "Backoffice e sala eletrica." },
+          { name: "WiFi Operacao Norte", publicIpv4Cidr: "203.0.113.11/32", localIpv4Cidr: "10.11.0.0/24", ssid: "USINA_NORTE_01", bssid: "AA:01:10:00:00:01", notes: "Rede principal de operacao e acesso QR." },
+          { name: "Rede Cabeada Norte", publicIpv4Cidr: "203.0.113.11/32", localIpv4Cidr: "10.11.10.0/24", notes: "Backoffice e sala eletrica." },
         ],
       },
       {
@@ -317,8 +328,8 @@ const organizationSeeds: OrganizationSeed[] = [
         geofenceLongitude: -40.503998,
         geofenceRadiusMeters: 250,
         authorizedNetworks: [
-          { name: "WiFi Operacao Leste", ssid: "USINA_LESTE_02", bssid: "AA:01:20:00:00:02", ipv4Cidr: "10.12.0.0/24", notes: "Rede validada para operacao com selfie obrigatoria." },
-          { name: "Rede Cabeada Leste", ipv4Cidr: "10.12.20.0/24", notes: "Sala de controle e supervisao." },
+          { name: "WiFi Operacao Leste", publicIpv4Cidr: "203.0.113.12/32", localIpv4Cidr: "10.12.0.0/24", ssid: "USINA_LESTE_02", bssid: "AA:01:20:00:00:02", notes: "Rede validada para operacao com selfie obrigatoria." },
+          { name: "Rede Cabeada Leste", publicIpv4Cidr: "203.0.113.12/32", localIpv4Cidr: "10.12.20.0/24", notes: "Sala de controle e supervisao." },
         ],
       },
       {
@@ -338,8 +349,8 @@ const organizationSeeds: OrganizationSeed[] = [
         geofenceLongitude: -40.97,
         geofenceRadiusMeters: 350,
         authorizedNetworks: [
-          { name: "WiFi Operacao Sertao", ssid: "USINA_SERTAO_03", bssid: "AA:01:30:00:00:03", ipv4Cidr: "10.13.0.0/24", notes: "Rede de equipes de manutencao pesada." },
-          { name: "Rede Cabeada Sertao", ipv4Cidr: "10.13.30.0/24", notes: "Backbone interno do site." },
+          { name: "WiFi Operacao Sertao", publicIpv4Cidr: "203.0.113.13/32", localIpv4Cidr: "10.13.0.0/24", ssid: "USINA_SERTAO_03", bssid: "AA:01:30:00:00:03", notes: "Rede de equipes de manutencao pesada." },
+          { name: "Rede Cabeada Sertao", publicIpv4Cidr: "203.0.113.13/32", localIpv4Cidr: "10.13.30.0/24", notes: "Backbone interno do site." },
         ],
       },
       {
@@ -356,7 +367,7 @@ const organizationSeeds: OrganizationSeed[] = [
         autoCloseLimitHours: 16,
         lateAlertMinutes: 240,
         authorizedNetworks: [
-          { name: "WiFi Administrativo Vale", ssid: "USINA_VALE_04", bssid: "AA:01:40:00:00:04", ipv4Cidr: "10.14.0.0/24", notes: "Rede opcional, sem obrigatoriedade de match." },
+          { name: "WiFi Administrativo Vale", publicIpv4Cidr: "203.0.113.14/32", localIpv4Cidr: "10.14.0.0/24", ssid: "USINA_VALE_04", bssid: "AA:01:40:00:00:04", notes: "Rede opcional, sem obrigatoriedade de match." },
         ],
       },
     ],
@@ -404,7 +415,7 @@ const organizationSeeds: OrganizationSeed[] = [
         autoCloseLimitHours: 12,
         lateAlertMinutes: 140,
         authorizedNetworks: [
-          { name: "WiFi Operacao Ponte", ssid: "USINA_PONTE_01", bssid: "BB:02:10:00:00:01", ipv4Cidr: "10.21.0.0/24", notes: "Rede principal da usina ponte." },
+          { name: "WiFi Operacao Ponte", publicIpv4Cidr: "203.0.113.21/32", localIpv4Cidr: "10.21.0.0/24", ssid: "USINA_PONTE_01", bssid: "BB:02:10:00:00:01", notes: "Rede principal da usina ponte." },
         ],
       },
       {
@@ -424,8 +435,8 @@ const organizationSeeds: OrganizationSeed[] = [
         geofenceLongitude: -43.411,
         geofenceRadiusMeters: 300,
         authorizedNetworks: [
-          { name: "WiFi Operacao Sul", ssid: "USINA_SUL_02", bssid: "BB:02:20:00:00:02", ipv4Cidr: "10.22.0.0/24", notes: "Rede da operacao com selfie obrigatoria." },
-          { name: "Rede Cabeada Sul", ipv4Cidr: "10.22.20.0/24", notes: "Sala de automacao." },
+          { name: "WiFi Operacao Sul", publicIpv4Cidr: "203.0.113.22/32", localIpv4Cidr: "10.22.0.0/24", ssid: "USINA_SUL_02", bssid: "BB:02:20:00:00:02", notes: "Rede da operacao com selfie obrigatoria." },
+          { name: "Rede Cabeada Sul", publicIpv4Cidr: "203.0.113.22/32", localIpv4Cidr: "10.22.20.0/24", notes: "Sala de automacao." },
         ],
       },
     ],
@@ -516,22 +527,26 @@ function buildValidationMode(plant: PlantSeed) {
 function buildValidationNotes(
   plant: PlantSeed,
   networkName: string | null,
-  matchedBy: "ssid" | "bssid" | "cidr" | "open" = "ssid",
+  matchedBy: "public-ip" | "local-cidr" | "ssid" | "bssid" | "open" = "ssid",
 ) {
   if (!plant.requireWifiMatch) {
-    return "Esta usina nao exige rede especifica no momento.";
+    return "Esta usina nao exige ambiente de rede especifico no momento.";
   }
 
   if (!networkName) {
-    return "Conexao autorizada pela mesma sub-rede da usina.";
+    return "Acesso validado pelo ambiente de rede autorizado da usina.";
   }
 
-  if (matchedBy === "cidr") {
-    return `Conexao autorizada pela mesma sub-rede da usina (${networkName}) por IP da rede.`;
+  if (matchedBy === "public-ip") {
+    return `Acesso validado pela rede publica da usina (${networkName}).`;
   }
 
-  const label = matchedBy === "bssid" ? "BSSID" : "SSID";
-  return `Conexao autorizada na rede ${networkName} por ${label}.`;
+  if (matchedBy === "local-cidr") {
+    return `Acesso validado pela LAN local da usina (${networkName}).`;
+  }
+
+  const label = matchedBy === "bssid" ? "BSSID" : "Wi-Fi autorizado";
+  return `Acesso validado na rede ${networkName} por ${label}.`;
 }
 
 function resolveGeoCoordinate(base: number | undefined, seed: number) {
@@ -574,7 +589,17 @@ async function createOrganizations() {
     const organization = await prisma.organization.create({
       data: { code: organizationSeed.code, name: organizationSeed.name },
     });
-    const plantsByCode = new Map<string, Plant & { authorizedNetworks: Array<{ ssid: string | null; bssid: string | null; ipv4Cidr: string | null }> }>();
+    const plantsByCode = new Map<
+      string,
+      Plant & {
+        authorizedNetworks: Array<{
+          ssid: string | null;
+          bssid: string | null;
+          publicIpv4Cidr: string | null;
+          localIpv4Cidr: string | null;
+        }>;
+      }
+    >();
 
     for (const plantSeed of organizationSeed.plants) {
       const plant = await prisma.plant.create({
@@ -598,9 +623,10 @@ async function createOrganizations() {
           authorizedNetworks: {
             create: plantSeed.authorizedNetworks.map((network) => ({
               name: network.name,
+              publicIpv4Cidr: network.publicIpv4Cidr ?? null,
+              localIpv4Cidr: network.localIpv4Cidr ?? null,
               ssid: network.ssid ?? null,
               bssid: network.bssid ?? null,
-              ipv4Cidr: network.ipv4Cidr ?? null,
               notes: network.notes ?? null,
               isActive: network.isActive ?? true,
             })),
@@ -608,7 +634,7 @@ async function createOrganizations() {
         },
         include: {
           authorizedNetworks: {
-            select: { ssid: true, bssid: true, ipv4Cidr: true },
+            select: { ssid: true, bssid: true, publicIpv4Cidr: true, localIpv4Cidr: true },
           },
         },
       });
@@ -864,7 +890,13 @@ function buildTimeEntries(contexts: Map<string, CreatedOrganizationContext>) {
         const validationNotes = buildValidationNotes(
           plantSeed,
           firstNetwork?.name ?? null,
-          firstNetwork?.ipv4Cidr ? "cidr" : firstNetwork?.bssid ? "bssid" : "ssid",
+          firstNetwork?.localIpv4Cidr
+            ? "local-cidr"
+            : firstNetwork?.publicIpv4Cidr
+              ? "public-ip"
+              : firstNetwork?.bssid
+                ? "bssid"
+                : "ssid",
         );
         const actor = pickAssignedActor(
           context,
@@ -958,7 +990,7 @@ function buildTimeEntries(contexts: Map<string, CreatedOrganizationContext>) {
           }
 
           const deviceIp =
-            buildIpFromCidr(firstNetwork?.ipv4Cidr, 20 + ((profileIndex + dayIndex) % 120)) ??
+            buildIpFromCidr(firstNetwork?.localIpv4Cidr, 20 + ((profileIndex + dayIndex) % 120)) ??
             `172.16.${profileIndex % 10}.${30 + dayIndex}`;
           const selfieUrl =
             plantSeed.requireSelfie || profile.personType === PersonType.VISITOR
@@ -1028,7 +1060,7 @@ function buildTimeEntries(contexts: Map<string, CreatedOrganizationContext>) {
           `${startHour.toString().padStart(2, "0")}:${startMinute.toString().padStart(2, "0")}`,
         );
         const deviceIp =
-          buildIpFromCidr(firstNetwork?.ipv4Cidr, 80 + (todaySeed % 40)) ??
+          buildIpFromCidr(firstNetwork?.localIpv4Cidr, 80 + (todaySeed % 40)) ??
           `172.18.${profileIndex % 10}.${60 + todaySeed}`;
         const entryId = `seed-${organizationSeed.code}-${profile.id}-${referenceDay.replace(/-/g, "")}-today`;
         const selfieUrl =

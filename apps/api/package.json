@@ -6,12 +6,12 @@
     "dev": "bun --watch src/index.ts",
     "build": "bun build ./src/index.ts --target bun --outdir dist",
     "start": "bun run dist/index.js",
-    "test": "bun test",
+    "test": "bun run prisma:migrate:deploy && bun test",
     "test:watch": "bun test --watch",
-    "typecheck": "bunx tsc --noEmit",
-    "prisma:generate": "bunx prisma generate",
-    "prisma:migrate": "bunx prisma migrate dev",
-    "prisma:migrate:deploy": "bunx prisma migrate deploy",
+    "typecheck": "cd ../.. && node ./node_modules/typescript/lib/tsc.js -p apps/api/tsconfig.json --noEmit",
+    "prisma:generate": "cd ../.. && node ./node_modules/prisma/build/index.js generate --schema apps/api/prisma/schema.prisma",
+    "prisma:migrate": "cd ../.. && node ./node_modules/prisma/build/index.js migrate dev --schema apps/api/prisma/schema.prisma",
+    "prisma:migrate:deploy": "cd ../.. && node ./node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma",
     "prisma:seed": "bun run prisma/seed.ts"
   },
   "dependencies": {

@@ -5,17 +5,19 @@
  * API HTTP + tempo real para operação de ponto em usinas solares.
  * OpenAPI spec version: 1.0.0
  */
-import type { PostApiV1PlantsDetectNetwork200CandidatesItem } from './postApiV1PlantsDetectNetwork200CandidatesItem';
+import type { PostApiV1PlantsDetectNetwork200LocalCandidatesItem } from './postApiV1PlantsDetectNetwork200LocalCandidatesItem';
 
 export type PostApiV1PlantsDetectNetwork200 = {
   /** @nullable */
-  requestIp: string | null;
+  observedPublicIp: string | null;
+  /** @nullable */
+  suggestedPublicIpv4Cidr: string | null;
   /** @nullable */
   selectedCandidateId: string | null;
   /** @nullable */
-  ipAddress: string | null;
+  localIpAddress: string | null;
   /** @nullable */
-  suggestedIpv4Cidr: string | null;
+  localIpv4Cidr: string | null;
   /** @nullable */
   interfaceName: string | null;
   /** @nullable */
@@ -26,7 +28,8 @@ export type PostApiV1PlantsDetectNetwork200 = {
   bssid: string | null;
   /** @nullable */
   source: string | null;
+  confidence: string;
   canAutoReadWifiIdentity: boolean;
   notes: string;
-  candidates: PostApiV1PlantsDetectNetwork200CandidatesItem[];
+  localCandidates: PostApiV1PlantsDetectNetwork200LocalCandidatesItem[];
 };

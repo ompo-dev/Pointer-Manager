@@ -29,9 +29,10 @@ import { createOptimisticId, resolveErrorMessage } from "@/store/store-utils";
 export interface PlantAuthorizedNetworkForm {
   id?: string;
   name: string;
+  publicIpv4Cidr: string;
+  localIpv4Cidr: string;
   ssid: string;
   bssid: string;
-  ipv4Cidr: string;
   notes: string;
 }
 
@@ -69,9 +70,10 @@ export interface PlantFormState {
 function emptyAuthorizedNetwork(): PlantAuthorizedNetworkForm {
   return {
     name: "",
+    publicIpv4Cidr: "",
+    localIpv4Cidr: "",
     ssid: "",
     bssid: "",
-    ipv4Cidr: "",
     notes: "",
   };
 }
@@ -98,9 +100,10 @@ function serializeNetworks(plant?: PlantDetails | Plant | null) {
   return (plant?.authorizedNetworks ?? []).map((network) => ({
     id: network.id,
     name: network.name,
+    publicIpv4Cidr: network.publicIpv4Cidr ?? "",
+    localIpv4Cidr: network.localIpv4Cidr ?? "",
     ssid: network.ssid ?? "",
     bssid: network.bssid ?? "",
-    ipv4Cidr: network.ipv4Cidr ?? "",
     notes: network.notes ?? "",
   }));
 }
@@ -109,17 +112,19 @@ function parseNetworks(networks: PlantAuthorizedNetworkForm[]) {
   return networks
     .map((network) => ({
       name: network.name.trim(),
+      publicIpv4Cidr: network.publicIpv4Cidr.trim() || null,
+      localIpv4Cidr: network.localIpv4Cidr.trim() || null,
       ssid: network.ssid.trim() || null,
       bssid: network.bssid.trim() || null,
-      ipv4Cidr: network.ipv4Cidr.trim() || null,
       notes: network.notes.trim() || null,
     }))
     .filter(
       (network) =>
         network.name ||
+        network.publicIpv4Cidr ||
+        network.localIpv4Cidr ||
         network.ssid ||
         network.bssid ||
-        network.ipv4Cidr ||
         network.notes,
     )
     .map((network) => ({
@@ -130,9 +135,10 @@ function parseNetworks(networks: PlantAuthorizedNetworkForm[]) {
 
 function hasConfiguredNetworkIdentity(network: PlantAuthorizedNetworkForm) {
   return Boolean(
+    network.publicIpv4Cidr.trim() ||
+      network.localIpv4Cidr.trim() ||
     network.ssid.trim() ||
-      network.bssid.trim() ||
-      network.ipv4Cidr.trim(),
+      network.bssid.trim(),
   );
 }
 
@@ -145,7 +151,7 @@ function isLegacyDetectedPlaceholder(network: PlantAuthorizedNetworkForm) {
     (name === "conexao atual" ||
       notes.includes("perfil do navegador") ||
       notes.includes("ip observado") ||
-      notes.includes("configuracao sugerida usa o ip observado"))
+      notes.includes("saida publica observada"))
   );
 }
 
@@ -154,33 +160,36 @@ function isAutoDetectedManagedNetwork(network: PlantAuthorizedNetworkForm) {
 
   return (
     notes.includes("detectado no equipamento que hospeda o sistema") ||
-    notes.includes("ip observado:")
+    notes.includes("ip publico observado:")
   );
 }
 
 function buildDetectedNetworkForm(
+  detection: DetectedPlantNetwork,
   candidate: {
     label: string;
     ssid?: string | null;
     bssid?: string | null;
-    suggestedIpv4Cidr?: string | null;
+    localIpv4Cidr?: string | null;
     notes?: string | null;
-    ipAddress?: string | null;
+    localIpAddress?: string | null;
   },
   fallbackNotes: string,
 ): PlantAuthorizedNetworkForm {
   const notes = [
     candidate.notes ?? fallbackNotes,
-    candidate.ipAddress ? `IP observado: ${candidate.ipAddress}` : null,
+    detection.observedPublicIp ? `IP publico observado: ${detection.observedPublicIp}` : null,
+    candidate.localIpAddress ? `IP local observado: ${candidate.localIpAddress}` : null,
   ]
     .filter(Boolean)
     .join(" | ");
 
   return {
     name: candidate.label,
+    publicIpv4Cidr: detection.suggestedPublicIpv4Cidr ?? "",
+    localIpv4Cidr: candidate.localIpv4Cidr ?? "",
     ssid: candidate.ssid ?? "",
     bssid: candidate.bssid ?? "",
-    ipv4Cidr: candidate.suggestedIpv4Cidr ?? "",
     notes,
   };
 }
@@ -514,10 +523,10 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
       });
       set((state) => {
         const selectedDetectedCandidateId =
-          detection.selectedCandidateId ?? detection.candidates[0]?.id ?? null;
+          detection.selectedCandidateId ?? detection.localCandidates[0]?.id ?? null;
         const selectedCandidate =
-          detection.candidates.find((candidate) => candidate.id === selectedDetectedCandidateId) ??
-          detection.candidates[0] ??
+          detection.localCandidates.find((candidate) => candidate.id === selectedDetectedCandidateId) ??
+          detection.localCandidates[0] ??
           null;
         const legacyPlaceholderIndex = state.form.authorizedNetworks.findIndex(
           isLegacyDetectedPlaceholder,
@@ -527,11 +536,19 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
             ? legacyPlaceholderIndex
             : state.form.authorizedNetworks.findIndex(isAutoDetectedManagedNetwork);
         const nextNetwork =
-          selectedCandidate &&
-          (selectedCandidate.suggestedIpv4Cidr ||
-            selectedCandidate.ssid ||
-            selectedCandidate.bssid)
-            ? buildDetectedNetworkForm(selectedCandidate, detection.notes)
+          detection.suggestedPublicIpv4Cidr ||
+          selectedCandidate?.localIpv4Cidr ||
+          selectedCandidate?.ssid ||
+          selectedCandidate?.bssid
+            ? buildDetectedNetworkForm(
+                detection,
+                selectedCandidate ?? {
+                  label: detection.observedPublicIp
+                    ? `Saida publica ${detection.observedPublicIp}`
+                    : "Ambiente detectado",
+                },
+                detection.notes,
+              )
             : null;
 
         const shouldAutoApply =
@@ -557,27 +574,27 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
                 authorizedNetworks,
               }
             : state.form,
-          feedback: detection.candidates.length
+          feedback: detection.localCandidates.length || detection.observedPublicIp
             ? shouldAutoApply
-              ? "Rede atual detectada e aplicada automaticamente na usina."
-              : "Rede atual detectada automaticamente para conferencia."
+              ? "Ambiente de rede atual detectado e aplicado automaticamente na usina."
+              : "Ambiente de rede atual detectado automaticamente para conferencia."
             : detection.notes,
         };
       });
       if (options?.notify) {
         const detection = get().detectedNetwork;
         const selectedCandidate =
-          detection?.candidates.find(
+          detection?.localCandidates.find(
             (candidate) => candidate.id === get().selectedDetectedCandidateId,
           ) ??
-          detection?.candidates[0] ??
+          detection?.localCandidates[0] ??
           null;
         const description =
           selectedCandidate?.label ??
           detection?.notes ??
-          "A rede atual foi verificada.";
+          "O ambiente de rede atual foi verificado.";
 
-        showSuccessToast("Rede atual detectada", description, {
+        showSuccessToast("Ambiente atual detectado", description, {
           id: toastId ?? undefined,
         });
       }
@@ -610,39 +627,54 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
     }
 
     const selectedCandidate =
-      detectedNetwork.candidates.find((candidate) => candidate.id === selectedDetectedCandidateId) ??
-      detectedNetwork.candidates.find((candidate) => candidate.isCurrent) ??
-      detectedNetwork.candidates[0] ??
+      detectedNetwork.localCandidates.find((candidate) => candidate.id === selectedDetectedCandidateId) ??
+      detectedNetwork.localCandidates.find((candidate) => candidate.isCurrent) ??
+      detectedNetwork.localCandidates[0] ??
       null;
 
-    if (!selectedCandidate) {
-      set({ feedback: "Nenhuma interface de rede valida foi detectada para este equipamento." });
+    if (!selectedCandidate && !detectedNetwork.suggestedPublicIpv4Cidr) {
+      set({ feedback: "Nenhum ambiente de rede utilizavel foi detectado para este equipamento." });
       showWarningToast(
-        "Nenhuma interface valida",
-        "O equipamento nao informou uma interface de rede utilizavel.",
+        "Nenhum ambiente valido",
+        "O equipamento nao informou sinais suficientes de rede para aplicacao automatica.",
       );
       return;
     }
 
-    if (!selectedCandidate.suggestedIpv4Cidr && !selectedCandidate.ssid && !selectedCandidate.bssid) {
+    if (
+      !detectedNetwork.suggestedPublicIpv4Cidr &&
+      !selectedCandidate?.localIpv4Cidr &&
+      !selectedCandidate?.ssid &&
+      !selectedCandidate?.bssid
+    ) {
       set({
         feedback:
-          "A interface detectada nao trouxe CIDR ou identificacao Wi-Fi suficiente para salvar a rede.",
+          "A deteccao atual nao trouxe IP publico, LAN local ou identidade Wi-Fi suficiente para salvar o ambiente.",
       });
       showWarningToast(
-        "Rede sem identificacao suficiente",
-        "A interface precisa informar CIDR, SSID ou BSSID para ser salva.",
+        "Ambiente sem identificacao suficiente",
+        "A deteccao precisa informar IP publico, LAN local ou identidade Wi-Fi para ser salva.",
       );
       return;
     }
 
     set((state) => {
-      const nextNetwork = buildDetectedNetworkForm(selectedCandidate, detectedNetwork.notes);
+      const nextNetwork = buildDetectedNetworkForm(
+        detectedNetwork,
+        selectedCandidate ?? {
+          label: detectedNetwork.observedPublicIp
+            ? `Saida publica ${detectedNetwork.observedPublicIp}`
+            : "Ambiente detectado",
+        },
+        detectedNetwork.notes,
+      );
 
       const alreadyExists = state.form.authorizedNetworks.some(
         (network) =>
-          network.ipv4Cidr.trim() !== "" &&
-          network.ipv4Cidr.trim() === nextNetwork.ipv4Cidr.trim(),
+          (network.publicIpv4Cidr.trim() !== "" &&
+            network.publicIpv4Cidr.trim() === nextNetwork.publicIpv4Cidr.trim()) ||
+          (network.localIpv4Cidr.trim() !== "" &&
+            network.localIpv4Cidr.trim() === nextNetwork.localIpv4Cidr.trim()),
       );
       const legacyPlaceholderIndex = state.form.authorizedNetworks.findIndex(
         isLegacyDetectedPlaceholder,
@@ -662,25 +694,29 @@ export const usePlantsStore = create<PlantsStore>((set, get) => ({
           authorizedNetworks,
         },
         feedback: alreadyExists
-          ? "A rede atual ja esta na lista de redes autorizadas."
+          ? "O ambiente atual ja esta na lista de redes autorizadas."
           : legacyPlaceholderIndex >= 0
-            ? "Rede detectada aplicada no lugar do cadastro antigo incompleto."
-            : "Rede selecionada adicionada a usina.",
+            ? "Ambiente detectado aplicado no lugar do cadastro antigo incompleto."
+            : "Ambiente selecionado adicionado a usina.",
       };
     });
-    const appliedCandidate = detectedNetwork.candidates.find(
+    const appliedCandidate = detectedNetwork.localCandidates.find(
       (candidate) => candidate.id === selectedDetectedCandidateId,
     );
-    const appliedName = appliedCandidate?.label ?? "Rede atual";
+    const appliedName =
+      appliedCandidate?.label ??
+      (detectedNetwork.observedPublicIp
+        ? `Saida publica ${detectedNetwork.observedPublicIp}`
+        : "Ambiente atual");
 
     if (
-      get().feedback === "A rede atual ja esta na lista de redes autorizadas."
+      get().feedback === "O ambiente atual ja esta na lista de redes autorizadas."
     ) {
-      showInfoToast("Rede ja cadastrada", `${appliedName} ja estava autorizada.`);
+      showInfoToast("Ambiente ja cadastrado", `${appliedName} ja estava autorizado.`);
       return;
     }
 
-    showSuccessToast("Rede aplicada", `${appliedName} foi adicionada a usina.`);
+    showSuccessToast("Ambiente aplicado", `${appliedName} foi adicionado a usina.`);
   },
   async detectCurrentLocation(options) {
     set({

@@ -11,7 +11,9 @@ export type PostApiV1TimeEntriesNetworkStatus200Network = {
   reason: string;
   message: string;
   /** @nullable */
-  observedIp: string | null;
+  observedPublicIp: string | null;
+  /** @nullable */
+  observedLocalIp: string | null;
   /** @nullable */
   currentNetworkName: string | null;
   matched: boolean;

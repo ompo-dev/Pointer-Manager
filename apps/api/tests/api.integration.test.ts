@@ -112,7 +112,7 @@ describe("api integration", () => {
 
       expect(response.status).toBe(401);
       expect(json).toEqual({
-        message: "Credenciais inválidas.",
+        message: "Credenciais invalidas.",
       });
     } finally {
       await cleanupFixture(fixture);
@@ -293,7 +293,7 @@ describe("api integration", () => {
 
   it("does not block a matching authorized network when the browser reports a false mobile hint", async () => {
     const fixture = await createFixture();
-    const ethernetLikeIp = fixture.plantWifiCidr.replace(".0/24", ".42");
+    const ethernetLikeIp = fixture.plantLocalCidr.replace(".0/24", ".42");
 
     try {
       const entryResult = await requestJson("/api/v1/time-entries/entry", {
@@ -308,7 +308,7 @@ describe("api integration", () => {
       });
 
       expect(entryResult.response.status).toBe(200);
-      expect(entryResult.json.validationNotes).toContain("mesma sub-rede da usina");
+      expect(entryResult.json.validationNotes).toContain("LAN local da usina");
     } finally {
       await cleanupFixture(fixture);
     }
@@ -321,7 +321,7 @@ describe("api integration", () => {
       const networkStatusResult = await requestJson("/api/v1/time-entries/network-status", {
         method: "POST",
         headers: {
-          "x-real-ip": "10.10.0.42",
+          "x-real-ip": fixture.plantPublicIp,
         },
         body: {
           plantId: fixture.plantId,
@@ -332,13 +332,14 @@ describe("api integration", () => {
       expect(networkStatusResult.json.network.status).toBe("AUTHORIZED");
       expect(networkStatusResult.json.network.matchedNetworkName).toBeDefined();
       expect(networkStatusResult.json.network.currentNetworkName).toBeDefined();
-      expect(networkStatusResult.json.network.observedIp).toBe("10.10.0.42");
+      expect(networkStatusResult.json.network.observedPublicIp).toBe(fixture.plantPublicIp);
+      expect(networkStatusResult.json.network.matchedBy).toBe("public-ip");
       expect(networkStatusResult.json.location.status).toBe("OPEN");
 
       const entryResult = await requestJson("/api/v1/time-entries/entry", {
         method: "POST",
         headers: {
-          "x-real-ip": "10.10.0.42",
+          "x-real-ip": fixture.plantPublicIp,
         },
         body: {
           cpf: fixture.personCpf,
@@ -347,7 +348,7 @@ describe("api integration", () => {
       });
 
       expect(entryResult.response.status).toBe(200);
-      expect(entryResult.json.deviceIp).toBe("10.10.0.42");
+      expect(entryResult.json.deviceIp).toBe(fixture.plantPublicIp);
     } finally {
       await cleanupFixture(fixture);
     }
@@ -369,7 +370,8 @@ describe("api integration", () => {
       expect(networkStatusResult.response.status).toBe(200);
       expect(networkStatusResult.json.plant.id).toBe(fixture.plantId);
       expect(networkStatusResult.json.network.status).toBe("AUTHORIZED");
-      expect(networkStatusResult.json.network.observedIp).toBe("10.10.0.42");
+      expect(networkStatusResult.json.network.observedLocalIp).toBe("10.10.0.42");
+      expect(networkStatusResult.json.network.matchedBy).toBe("local-cidr");
     } finally {
       await cleanupFixture(fixture);
     }
@@ -409,10 +411,10 @@ describe("api integration", () => {
 
       expect(networkStatusResult.response.status).toBe(200);
       expect(networkStatusResult.json.network.status).toBe("AUTHORIZED");
-      expect(networkStatusResult.json.network.matchedBy).toBe("cidr");
+      expect(networkStatusResult.json.network.matchedBy).toBe("local-cidr");
       expect(networkStatusResult.json.network.currentNetworkName).toContain("Rede cabeada");
       expect(networkStatusResult.json.network.matchedNetworkName).toBeDefined();
-      expect(networkStatusResult.json.network.message).toContain("mesma sub-rede");
+      expect(networkStatusResult.json.network.message).toContain("LAN local");
     } finally {
       await cleanupFixture(fixture);
     }
@@ -434,7 +436,7 @@ describe("api integration", () => {
       const pendingLocationResult = await requestJson("/api/v1/time-entries/network-status", {
         method: "POST",
         headers: {
-          "x-real-ip": "10.10.0.42",
+          "x-real-ip": fixture.plantPublicIp,
         },
         body: {
           plantId: fixture.plantId,
@@ -448,7 +450,7 @@ describe("api integration", () => {
       const authorizedLocationResult = await requestJson("/api/v1/time-entries/network-status", {
         method: "POST",
         headers: {
-          "x-real-ip": "10.10.0.42",
+          "x-real-ip": fixture.plantPublicIp,
         },
         body: {
           plantId: fixture.plantId,
@@ -480,7 +482,8 @@ describe("api integration", () => {
 
       expect(networkStatusResult.response.status).toBe(200);
       expect(networkStatusResult.json.network.status).toBe("AUTHORIZED");
-      expect(networkStatusResult.json.network.observedIp).toBe("10.10.0.42");
+      expect(networkStatusResult.json.network.observedLocalIp).toBe("10.10.0.42");
+      expect(networkStatusResult.json.network.matchedBy).toBe("local-cidr");
 
       const entryResult = await requestJson("/api/v1/time-entries/entry", {
         method: "POST",
@@ -682,7 +685,7 @@ describe("api integration", () => {
       const networkStatusResult = await requestJson("/api/v1/time-entries/network-status", {
         method: "POST",
         headers: {
-          "x-real-ip": "10.10.0.42",
+          "x-real-ip": fixture.plantPublicIp,
         },
         body: {
           plantId: fixture.plantId,
@@ -693,13 +696,13 @@ describe("api integration", () => {
       expect(networkStatusResult.json.network.status).toBe("BLOCKED");
       expect(networkStatusResult.json.ready).toBe(false);
       expect(networkStatusResult.json.network.message).toContain(
-        "nao possui redes autorizadas ativas",
+        "nao possui configuracoes ativas cadastradas",
       );
 
       const entryResult = await requestJson("/api/v1/time-entries/entry", {
         method: "POST",
         headers: {
-          "x-real-ip": "10.10.0.42",
+          "x-real-ip": fixture.plantPublicIp,
         },
         body: {
           cpf: fixture.personCpf,
@@ -708,7 +711,7 @@ describe("api integration", () => {
       });
 
       expect(entryResult.response.status).toBe(403);
-      expect(entryResult.json.message).toContain("nao possui redes autorizadas ativas");
+      expect(entryResult.json.message).toContain("nao possui configuracoes ativas cadastradas");
     } finally {
       await cleanupFixture(fixture);
     }
@@ -733,7 +736,8 @@ describe("api integration", () => {
             create: {
               name: `Network Scope ${suffix}`,
               ssid: `SSID-SCOPE-${suffix}`,
-              ipv4Cidr: "10.20.0.0/24",
+              publicIpv4Cidr: `203.0.113.${50 + (Number.parseInt(suffix.slice(0, 2), 10) % 100)}/32`,
+              localIpv4Cidr: "10.20.0.0/24",
             },
           },
         },
@@ -870,7 +874,8 @@ describe("api integration", () => {
             authorizedNetworks: [
               {
                 name: `Audit Network ${suffix}`,
-                ipv4Cidr: "10.30.0.0/24",
+                publicIpv4Cidr: `203.0.113.${120 + (Number.parseInt(suffix.slice(0, 2), 10) % 80)}/32`,
+                localIpv4Cidr: "10.30.0.0/24",
               },
             ],
           },
@@ -1011,7 +1016,7 @@ describe("api integration", () => {
 
     expect(response.status).toBe(401);
     expect(json).toEqual({
-      message: "Token não informado.",
+      message: "Token nao informado.",
     });
   });
 });

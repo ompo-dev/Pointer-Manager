@@ -1,6 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import type os from "node:os";
-import { buildHostNetworkCandidates } from "../src/domains/plants/domain/network-detection";
+import {
+  buildHostNetworkCandidates,
+  detectPlantNetwork,
+} from "../src/domains/plants/domain/network-detection";
 
 function ipv4(address: string, cidr: string): os.NetworkInterfaceInfo {
   return {
@@ -25,7 +28,7 @@ describe("network detection", () => {
 
     expect(candidates).toHaveLength(1);
     expect(candidates[0]?.interfaceName).toBe("Ethernet");
-    expect(candidates[0]?.ipAddress).toBe("192.168.100.27");
+    expect(candidates[0]?.localIpAddress).toBe("192.168.100.27");
   });
 
   it("inherits wifi identity for a wired interface on the same subnet", () => {
@@ -50,5 +53,17 @@ describe("network detection", () => {
     expect(ethernetCandidate).toBeDefined();
     expect(ethernetCandidate?.ssid).toBe("USINA_OPERACAO");
     expect(ethernetCandidate?.bssid).toBe("AA:BB:CC:DD:EE:FF");
+  });
+
+  it("treats a public request IP as the primary production signal even without LAN candidates", () => {
+    const detection = detectPlantNetwork({
+      requestIp: "203.0.113.42",
+      browserConnectionType: "ethernet",
+    });
+
+    expect(detection.observedPublicIp).toBe("203.0.113.42");
+    expect(detection.suggestedPublicIpv4Cidr).toBe("203.0.113.42/32");
+    expect(detection.confidence).toBe("high");
+    expect(detection.notes).toContain("Saida publica observada");
   });
 });

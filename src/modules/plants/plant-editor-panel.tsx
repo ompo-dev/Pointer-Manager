@@ -25,11 +25,17 @@ function formatConnectionKind(connectionKind?: string | null) {
 }
 
 function networkNeedsRepair(network: {
+  publicIpv4Cidr?: string | null;
+  localIpv4Cidr?: string | null;
   ssid?: string | null;
   bssid?: string | null;
-  ipv4Cidr?: string | null;
 }) {
-  return !network.ssid && !network.bssid && !network.ipv4Cidr;
+  return (
+    !network.publicIpv4Cidr &&
+    !network.localIpv4Cidr &&
+    !network.ssid &&
+    !network.bssid
+  );
 }
 
 interface PlantEditorPanelProps {
@@ -42,7 +48,7 @@ interface PlantEditorPanelProps {
   loadingCities: boolean;
   detectedNetwork: DetectedNetworkState | null;
   selectedDetectedCandidateId: string | null;
-  selectedDetectedCandidate: DetectedNetworkState["candidates"][number] | null;
+  selectedDetectedCandidate: DetectedNetworkState["localCandidates"][number] | null;
   detectedLocation: DetectedLocationState | null;
   feedback: string | null;
   saving: boolean;
@@ -91,13 +97,13 @@ export function PlantEditorPanel({
   applyDetectedLocation,
   onSave,
 }: PlantEditorPanelProps) {
-  const detectedCandidateOptions = (detectedNetwork?.candidates ?? []).map((candidate) => ({
+  const detectedCandidateOptions = (detectedNetwork?.localCandidates ?? []).map((candidate) => ({
     value: candidate.id,
     label: candidate.label,
     keywords: [
       candidate.connectionKind,
       candidate.interfaceName ?? "",
-      candidate.ipAddress ?? "",
+      candidate.localIpAddress ?? "",
       candidate.ssid ?? "",
       candidate.bssid ?? "",
     ],
@@ -111,7 +117,7 @@ export function PlantEditorPanel({
             {mode === "edit" ? "Editar usina" : "Criar usina"}
           </h3>
           <p className="text-sm text-muted-foreground">
-            Politica da usina, QRCode e redes autorizadas com deteccao do equipamento atual.
+            Politica da usina, QRCode e ambiente de rede autorizado com deteccao do equipamento atual.
           </p>
         </div>
         {showSaveAction ? (
@@ -229,9 +235,9 @@ export function PlantEditorPanel({
       <div className="grid gap-3 xl:grid-cols-2">
         <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <Label className="text-sm font-semibold">Exigir rede autorizada</Label>
+            <Label className="text-sm font-semibold">Exigir ambiente autorizado</Label>
             <p className="text-sm text-muted-foreground">
-              Permite registro apenas dentro da rede aprovada da usina.
+              Permite registro apenas dentro do ambiente de rede aprovado da usina.
             </p>
           </div>
           <Switch
@@ -257,10 +263,9 @@ export function PlantEditorPanel({
       <div className="space-y-4 rounded-2xl border border-border bg-background/70 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold">Rede autorizada da usina</p>
+            <p className="text-sm font-semibold">Ambiente de rede autorizado</p>
             <p className="text-sm text-muted-foreground">
-              O sistema detecta automaticamente a rede ativa do equipamento e aplica a
-              configuracao atual na ficha da usina.
+              O sistema usa a saida publica como sinal principal em producao e complementa com LAN local e identidade Wi-Fi quando disponiveis.
             </p>
           </div>
           <Button
@@ -281,39 +286,53 @@ export function PlantEditorPanel({
             <div className="space-y-1">
               <p className="inline-flex items-center gap-2 text-sm font-semibold">
                 <Router className="size-4" />
-                Interface detectada
+                Ambiente detectado
               </p>
-              <p className="break-words text-sm text-muted-foreground">
-                Tipo selecionado: {formatConnectionKind(selectedDetectedCandidate?.connectionKind)}
-                {selectedDetectedCandidate?.interfaceName
-                  ? ` | ${selectedDetectedCandidate.interfaceName}`
-                  : ""}
-              </p>
-              <p className="break-words text-sm text-muted-foreground">
-                IP: {selectedDetectedCandidate?.ipAddress ?? detectedNetwork?.ipAddress ?? "-"} |
-                CIDR:{" "}
-                {selectedDetectedCandidate?.suggestedIpv4Cidr ??
-                  detectedNetwork?.suggestedIpv4Cidr ??
-                  "-"}
-              </p>
-              {selectedDetectedCandidate?.ssid || selectedDetectedCandidate?.bssid ? (
-                <p className="break-words text-sm text-muted-foreground">
-                  SSID: {selectedDetectedCandidate.ssid ?? "-"} | BSSID:{" "}
-                  {selectedDetectedCandidate.bssid ?? "-"}
-                </p>
-              ) : selectedDetectedCandidate?.connectionKind === "ethernet" ? (
-                <p className="text-sm text-muted-foreground">
-                  Conexao cabeada detectada. SSID e BSSID nao se aplicam.
-                </p>
-              ) : null}
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">Saida publica observada</p>
+                  <p className="break-words">
+                    IP: {detectedNetwork?.observedPublicIp ?? "-"} | CIDR sugerido:{" "}
+                    {detectedNetwork?.suggestedPublicIpv4Cidr ?? "-"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">Rede local detectada</p>
+                  <p className="break-words">
+                    Tipo selecionado: {formatConnectionKind(selectedDetectedCandidate?.connectionKind)}
+                    {selectedDetectedCandidate?.interfaceName
+                      ? ` | ${selectedDetectedCandidate.interfaceName}`
+                      : ""}
+                  </p>
+                  <p className="break-words">
+                    IP local: {selectedDetectedCandidate?.localIpAddress ?? detectedNetwork?.localIpAddress ?? "-"} | CIDR local:{" "}
+                    {selectedDetectedCandidate?.localIpv4Cidr ??
+                      detectedNetwork?.localIpv4Cidr ??
+                      "-"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">Identidade Wi-Fi</p>
+                  {selectedDetectedCandidate?.ssid || selectedDetectedCandidate?.bssid ? (
+                    <p className="break-words">
+                      SSID: {selectedDetectedCandidate.ssid ?? "-"} | BSSID:{" "}
+                      {selectedDetectedCandidate.bssid ?? "-"}
+                    </p>
+                  ) : selectedDetectedCandidate?.connectionKind === "ethernet" ? (
+                    <p>Conexao cabeada detectada. SSID e BSSID nao se aplicam.</p>
+                  ) : (
+                    <p>SSID e BSSID nao puderam ser lidos automaticamente neste navegador.</p>
+                  )}
+                </div>
+              </div>
             </div>
             <Button
               type="button"
               onClick={applyDetectedNetwork}
-              disabled={!selectedDetectedCandidate}
+              disabled={!selectedDetectedCandidate && !detectedNetwork?.suggestedPublicIpv4Cidr}
               className="w-full sm:w-auto"
             >
-              Aplicar novamente
+              Aplicar ambiente
             </Button>
           </div>
           {detectedNetwork ? (
@@ -333,9 +352,9 @@ export function PlantEditorPanel({
             />
           </div>
 
-          {(detectedNetwork?.candidates.length ?? 0) > 0 ? (
+          {(detectedNetwork?.localCandidates.length ?? 0) > 0 ? (
             <div className="mt-4 grid grid-cols-1 gap-2">
-              {detectedNetwork?.candidates.map((candidate) => (
+              {detectedNetwork?.localCandidates.map((candidate) => (
                 <button
                   key={candidate.id}
                   type="button"
@@ -355,8 +374,8 @@ export function PlantEditorPanel({
                       </p>
                     </div>
                     <div className="text-sm opacity-80">
-                      <p>{candidate.ipAddress ?? "-"}</p>
-                      <p>{candidate.suggestedIpv4Cidr ?? "-"}</p>
+                      <p>{candidate.localIpAddress ?? "-"}</p>
+                      <p>{candidate.localIpv4Cidr ?? "-"}</p>
                       {candidate.ssid || candidate.bssid ? (
                         <p>
                           {candidate.ssid ?? "-"} | {candidate.bssid ?? "-"}
@@ -427,11 +446,11 @@ export function PlantEditorPanel({
 
         <div className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-semibold">Redes autorizadas salvas</p>
+            <p className="text-sm font-semibold">Ambientes autorizados salvos</p>
             <Button
               type="button"
               variant="outline"
-              onClick={() => appendAuthorizedNetwork({ name: "Rede manual" })}
+              onClick={() => appendAuthorizedNetwork({ name: "Ambiente manual" })}
               className="w-full sm:w-auto"
             >
               <Plus className="mr-2 size-4" />
@@ -441,8 +460,7 @@ export function PlantEditorPanel({
 
           {form.authorizedNetworks.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-5 text-sm text-muted-foreground">
-              Nenhuma rede configurada ainda. A conexao atual e aplicada automaticamente; se
-              precisar, voce ainda pode adicionar uma rede manual.
+              Nenhum ambiente configurado ainda. A deteccao atual pode aplicar automaticamente a saida publica, a LAN local e a identidade Wi-Fi; se precisar, voce ainda pode cadastrar manualmente.
             </div>
           ) : (
             form.authorizedNetworks.map((network, index) => (
@@ -451,7 +469,7 @@ export function PlantEditorPanel({
                 className="space-y-3 rounded-2xl border border-border bg-background p-4"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-semibold">Rede #{index + 1}</p>
+                  <p className="text-sm font-semibold">Ambiente #{index + 1}</p>
                   <Button
                     type="button"
                     variant="ghost"
@@ -465,8 +483,7 @@ export function PlantEditorPanel({
                 </div>
                 {networkNeedsRepair(network) ? (
                   <p className="rounded-2xl border border-amber-300/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-100">
-                    Cadastro antigo/incompleto. A deteccao automatica corrige isso ao abrir a
-                    ficha; se necessario, atualize a deteccao e salve novamente.
+                    Cadastro antigo/incompleto. Atualize a deteccao e salve novamente para incluir a saida publica desta usina.
                   </p>
                 ) : null}
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -478,10 +495,17 @@ export function PlantEditorPanel({
                     }
                   />
                   <Input
-                    placeholder="IPv4/CIDR autorizado"
-                    value={network.ipv4Cidr}
+                    placeholder="CIDR publico autorizado"
+                    value={network.publicIpv4Cidr}
                     onChange={(event) =>
-                      updateAuthorizedNetwork(index, "ipv4Cidr", event.target.value)
+                      updateAuthorizedNetwork(index, "publicIpv4Cidr", event.target.value)
+                    }
+                  />
+                  <Input
+                    placeholder="CIDR local autorizado"
+                    value={network.localIpv4Cidr}
+                    onChange={(event) =>
+                      updateAuthorizedNetwork(index, "localIpv4Cidr", event.target.value)
                     }
                   />
                   <Input

@@ -14,8 +14,8 @@ export interface DetectedPlantNetworkCandidate {
   label: string;
   connectionKind: NetworkConnectionKind;
   interfaceName: string | null;
-  ipAddress: string | null;
-  suggestedIpv4Cidr: string | null;
+  localIpAddress: string | null;
+  localIpv4Cidr: string | null;
   ssid: string | null;
   bssid: string | null;
   source: string;
@@ -24,18 +24,20 @@ export interface DetectedPlantNetworkCandidate {
 }
 
 export interface DetectedPlantNetworkResult {
-  requestIp: string | null;
+  observedPublicIp: string | null;
+  suggestedPublicIpv4Cidr: string | null;
   selectedCandidateId: string | null;
-  ipAddress: string | null;
-  suggestedIpv4Cidr: string | null;
+  localIpAddress: string | null;
+  localIpv4Cidr: string | null;
   interfaceName: string | null;
   connectionKind: NetworkConnectionKind | null;
   ssid: string | null;
   bssid: string | null;
   source: string | null;
+  confidence: "high" | "medium" | "low";
   canAutoReadWifiIdentity: boolean;
   notes: string;
-  candidates: DetectedPlantNetworkCandidate[];
+  localCandidates: DetectedPlantNetworkCandidate[];
 }
 
 type HostWifiDetails = {
@@ -181,8 +183,18 @@ function buildNetworkCidr(value?: string | null, prefix = 24) {
   return `${numberToIpv4(networkValue)}/${prefix}`;
 }
 
-function buildSuggestedIpv4Cidr(value?: string | null) {
+function buildSuggestedLocalIpv4Cidr(value?: string | null) {
   return buildNetworkCidr(value, 24);
+}
+
+function buildSuggestedPublicIpv4Cidr(value?: string | null) {
+  const normalized = normalizeIpAddress(value);
+
+  if (!normalized || !isIpv4(normalized)) {
+    return null;
+  }
+
+  return `${normalized}/32`;
 }
 
 function normalizeIpv4Cidr(value?: string | null) {
@@ -194,7 +206,7 @@ function normalizeIpv4Cidr(value?: string | null) {
   const prefix = Number.parseInt(prefixValue ?? "", 10);
 
   if (Number.isNaN(prefix)) {
-    return buildSuggestedIpv4Cidr(address);
+    return buildSuggestedLocalIpv4Cidr(address);
   }
 
   return buildNetworkCidr(address, prefix);
@@ -455,18 +467,18 @@ export function buildHostNetworkCandidates(
     const connectionKind = wifiInfo
       ? "wifi"
       : guessInterfaceConnectionKind(interfaceName);
-    const suggestedIpv4Cidr =
+    const localIpv4Cidr =
       typeof ipv4Address.cidr === "string" && ipv4Address.cidr
         ? normalizeIpv4Cidr(ipv4Address.cidr)
-        : buildSuggestedIpv4Cidr(ipAddress);
+        : buildSuggestedLocalIpv4Cidr(ipAddress);
 
     candidates.push({
       id: `host:${interfaceName}:${ipAddress}`,
       label: formatConnectionLabel(connectionKind, interfaceName, wifiInfo?.ssid ?? null, ipAddress),
       connectionKind,
       interfaceName,
-      ipAddress,
-      suggestedIpv4Cidr,
+      localIpAddress: ipAddress,
+      localIpv4Cidr,
       ssid: wifiInfo?.ssid ?? null,
       bssid: wifiInfo?.bssid ?? null,
       source: "host-interface",
@@ -494,7 +506,7 @@ export function buildHostNetworkCandidates(
 
     const relatedWifiCandidate =
       wifiIdentityCandidates.find((wifiCandidate) =>
-        sameIpv4Subnet(wifiCandidate.ipAddress, candidate.ipAddress),
+        sameIpv4Subnet(wifiCandidate.localIpAddress, candidate.localIpAddress),
       ) ??
       (wifiIdentityCandidates.length === 1 ? wifiIdentityCandidates[0] : null);
 
@@ -511,7 +523,7 @@ export function buildHostNetworkCandidates(
         candidate.connectionKind,
         candidate.interfaceName,
         inheritedSsid,
-        candidate.ipAddress,
+        candidate.localIpAddress,
       ),
       ssid: inheritedSsid,
       bssid: inheritedBssid,
@@ -543,8 +555,8 @@ function buildRequestCandidate(
     label: formatConnectionLabel(connectionKind, null, null, ipAddress),
     connectionKind,
     interfaceName: null,
-    ipAddress,
-    suggestedIpv4Cidr: buildSuggestedIpv4Cidr(ipAddress),
+    localIpAddress: ipAddress,
+    localIpv4Cidr: buildSuggestedLocalIpv4Cidr(ipAddress),
     ssid: null,
     bssid: null,
     source: "request-ip",
@@ -566,8 +578,8 @@ function buildBrowserCandidates(
         label: formatConnectionLabel(connectionKind, null, null, ipAddress),
         connectionKind,
         interfaceName: null,
-        ipAddress,
-        suggestedIpv4Cidr: buildSuggestedIpv4Cidr(ipAddress),
+        localIpAddress: ipAddress,
+        localIpv4Cidr: buildSuggestedLocalIpv4Cidr(ipAddress),
         ssid: null,
         bssid: null,
         source: "browser-local-ip",
@@ -581,7 +593,7 @@ function dedupeCandidates(candidates: DetectedPlantNetworkCandidate[]) {
   const seen = new Set<string>();
 
   return candidates.filter((candidate) => {
-    const key = `${candidate.source}:${candidate.interfaceName ?? "-"}:${candidate.ipAddress ?? "-"}`;
+    const key = `${candidate.source}:${candidate.interfaceName ?? "-"}:${candidate.localIpAddress ?? "-"}`;
     if (seen.has(key)) {
       return false;
     }
@@ -604,7 +616,7 @@ function selectCurrentCandidate(
     new Set(
       [input.requestIp, ...(input.browserIpCandidates ?? [])]
         .map(normalizeIpAddress)
-        .filter(isIpv4),
+        .filter((value): value is string => !!value && isLocalAreaIpv4(value)),
     ),
   );
 
@@ -614,11 +626,11 @@ function selectCurrentCandidate(
   for (const candidate of candidates) {
     let score = 0;
 
-    if (candidate.ipAddress && hintIps.includes(candidate.ipAddress)) {
+    if (candidate.localIpAddress && hintIps.includes(candidate.localIpAddress)) {
       score += 100;
     } else if (
-      candidate.ipAddress &&
-      hintIps.some((hintIp) => sameIpv4Subnet(hintIp, candidate.ipAddress))
+      candidate.localIpAddress &&
+      hintIps.some((hintIp) => sameIpv4Subnet(hintIp, candidate.localIpAddress))
     ) {
       score += 60;
     }
@@ -639,11 +651,11 @@ function selectCurrentCandidate(
       score -= 20;
     }
 
-    if (candidate.ipAddress && isLocalAreaIpv4(candidate.ipAddress)) {
+    if (candidate.localIpAddress && isLocalAreaIpv4(candidate.localIpAddress)) {
       score += 20;
     }
 
-    if (candidate.ipAddress && isLinkLocalIpv4(candidate.ipAddress)) {
+    if (candidate.localIpAddress && isLinkLocalIpv4(candidate.localIpAddress)) {
       score -= 200;
     }
 
@@ -662,11 +674,15 @@ function selectCurrentCandidate(
 
 export function detectPlantNetwork(input: DetectPlantNetworkInput): DetectedPlantNetworkResult {
   const requestIp = normalizeIpAddress(input.requestIp);
+  const observedPublicIp =
+    requestIp && !isLoopbackIpv4(requestIp) && !isLocalAreaIpv4(requestIp)
+      ? requestIp
+      : null;
   const browserIpCandidates = Array.from(
     new Set(
       (input.browserIpCandidates ?? [])
         .map(normalizeIpAddress)
-        .filter((value): value is string => !!value && isPrivateIpv4(value)),
+        .filter((value): value is string => !!value && isLocalAreaIpv4(value)),
     ),
   );
 
@@ -674,9 +690,9 @@ export function detectPlantNetwork(input: DetectPlantNetworkInput): DetectedPlan
 
   if (
     requestIp &&
-    isPrivateIpv4(requestIp) &&
+    isLocalAreaIpv4(requestIp) &&
     !isLoopbackIpv4(requestIp) &&
-    !candidates.some((candidate) => candidate.ipAddress === requestIp)
+    !candidates.some((candidate) => candidate.localIpAddress === requestIp)
   ) {
     candidates.unshift(buildRequestCandidate(requestIp, input.browserConnectionType));
   }
@@ -697,47 +713,63 @@ export function detectPlantNetwork(input: DetectPlantNetworkInput): DetectedPlan
     isCurrent: candidate.id === selectedCandidate?.id,
   }));
 
-  if (!selectedCandidate) {
-    const requestLooksPublic =
-      !!requestIp && !isLoopbackIpv4(requestIp) && !isLocalAreaIpv4(requestIp);
+  const canAutoReadWifiIdentity = resolvedCandidates.some((candidate) =>
+    Boolean(candidate.ssid || candidate.bssid),
+  );
+  const confidence: DetectedPlantNetworkResult["confidence"] = observedPublicIp
+    ? "high"
+    : selectedCandidate
+      ? "medium"
+      : "low";
 
+  const notes = observedPublicIp
+    ? selectedCandidate
+      ? `Saida publica observada (${observedPublicIp}) e LAN local identificada automaticamente. O IP publico e o sinal principal para producao.`
+      : `Saida publica observada (${observedPublicIp}). Nenhuma LAN local foi identificada automaticamente pelo navegador, mas o IP publico ja pode ser usado para autorizar a usina em producao.`
+    : selectedCandidate
+      ? selectedCandidate.notes ??
+        "Rede local identificada e pronta para ser adicionada como ambiente autorizado."
+      : "Nao foi possivel identificar automaticamente a rede atual. Verifique se o equipamento possui conectividade IPv4 ativa ou cadastre o ambiente manualmente.";
+
+  if (!selectedCandidate) {
     return {
-      requestIp,
+      observedPublicIp,
+      suggestedPublicIpv4Cidr: buildSuggestedPublicIpv4Cidr(observedPublicIp),
       selectedCandidateId: null,
-      ipAddress: requestLooksPublic ? null : requestIp,
-      suggestedIpv4Cidr:
-        requestLooksPublic || !isLocalAreaIpv4(requestIp)
-          ? null
-          : buildSuggestedIpv4Cidr(requestIp),
+      localIpAddress: requestIp && isLocalAreaIpv4(requestIp) ? requestIp : null,
+      localIpv4Cidr:
+        requestIp && isLocalAreaIpv4(requestIp)
+          ? buildSuggestedLocalIpv4Cidr(requestIp)
+          : null,
       interfaceName: null,
-      connectionKind: null,
+      connectionKind:
+        observedPublicIp || requestIp
+          ? normalizeBrowserConnectionKind(input.browserConnectionType)
+          : null,
       ssid: null,
       bssid: null,
-      source: null,
-      canAutoReadWifiIdentity: false,
-      notes: requestLooksPublic
-        ? `A requisicao chegou com IP publico (${requestIp}). O sistema nao conseguiu enxergar um IP local da LAN deste equipamento. Abra o painel pela URL local da maquina ou informe a rede manualmente.`
-        : "Nao foi possivel identificar automaticamente a rede atual. Verifique se o equipamento possui uma interface IPv4 ativa.",
-      candidates: resolvedCandidates,
+      source: observedPublicIp ? "request-public-ip" : null,
+      confidence,
+      canAutoReadWifiIdentity,
+      notes,
+      localCandidates: resolvedCandidates,
     };
   }
 
   return {
-    requestIp,
+    observedPublicIp,
+    suggestedPublicIpv4Cidr: buildSuggestedPublicIpv4Cidr(observedPublicIp),
     selectedCandidateId: selectedCandidate.id,
-    ipAddress: selectedCandidate.ipAddress,
-    suggestedIpv4Cidr: selectedCandidate.suggestedIpv4Cidr,
+    localIpAddress: selectedCandidate.localIpAddress,
+    localIpv4Cidr: selectedCandidate.localIpv4Cidr,
     interfaceName: selectedCandidate.interfaceName,
     connectionKind: selectedCandidate.connectionKind,
     ssid: selectedCandidate.ssid,
     bssid: selectedCandidate.bssid,
     source: selectedCandidate.source,
-    canAutoReadWifiIdentity: resolvedCandidates.some(
-      (candidate) => Boolean(candidate.ssid || candidate.bssid),
-    ),
-    notes:
-      selectedCandidate.notes ??
-      "Rede atual identificada e pronta para ser adicionada como rede autorizada.",
-    candidates: resolvedCandidates,
+    confidence,
+    canAutoReadWifiIdentity,
+    notes,
+    localCandidates: resolvedCandidates,
   };
 }

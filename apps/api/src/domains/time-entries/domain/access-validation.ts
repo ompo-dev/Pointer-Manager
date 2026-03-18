@@ -1,7 +1,8 @@
 import type { AuthorizedNetwork, Plant } from "@prisma/client";
 
 interface AccessValidationInput {
-  deviceIp?: string | null;
+  observedPublicIp?: string | null;
+  localDeviceIp?: string | null;
   wifiSsid?: string | null;
   wifiBssid?: string | null;
   geoLatitude?: number | null;
@@ -22,13 +23,14 @@ type AccessValidationPlant = Pick<
   authorizedNetworks: AuthorizedNetwork[];
 };
 
-type NetworkMatchKind = "ssid" | "bssid" | "cidr" | null;
+type NetworkMatchKind = "public-ip" | "local-cidr" | "ssid" | "bssid" | null;
 
 export interface PlantNetworkAccessEvaluation {
   status: "AUTHORIZED" | "BLOCKED" | "OPEN";
   reason: "authorized" | "network" | "cellular" | "open";
   message: string;
-  observedIp: string | null;
+  observedPublicIp: string | null;
+  observedLocalIp: string | null;
   currentNetworkName: string | null;
   matched: boolean;
   matchedBy: NetworkMatchKind;
@@ -119,6 +121,30 @@ function findMatchingAuthorizedNetwork(
   input: AccessValidationInput,
 ) {
   for (const network of activeNetworks) {
+    const publicIpMatched =
+      !!network.publicIpv4Cidr &&
+      !!input.observedPublicIp &&
+      matchIpv4Cidr(input.observedPublicIp, network.publicIpv4Cidr);
+
+    if (publicIpMatched) {
+      return {
+        network,
+        matchedBy: "public-ip" as const,
+      };
+    }
+
+    const localIpMatched =
+      !!network.localIpv4Cidr &&
+      !!input.localDeviceIp &&
+      matchIpv4Cidr(input.localDeviceIp, network.localIpv4Cidr);
+
+    if (localIpMatched) {
+      return {
+        network,
+        matchedBy: "local-cidr" as const,
+      };
+    }
+
     const ssidMatched =
       !!network.ssid &&
       !!input.wifiSsid &&
@@ -143,17 +169,6 @@ function findMatchingAuthorizedNetwork(
       };
     }
 
-    const ipMatched =
-      !!network.ipv4Cidr &&
-      !!input.deviceIp &&
-      matchIpv4Cidr(input.deviceIp, network.ipv4Cidr);
-
-    if (ipMatched) {
-      return {
-        network,
-        matchedBy: "cidr" as const,
-      };
-    }
   }
 
   return {
@@ -170,7 +185,13 @@ function resolveObservedNetworkName(input: AccessValidationInput) {
   const networkType = input.networkType?.trim().toLowerCase();
 
   if (networkType === "ethernet" || networkType === "wired") {
-    return input.deviceIp ? `Rede cabeada (${input.deviceIp})` : "Rede cabeada";
+    if (input.localDeviceIp) {
+      return `Rede cabeada (${input.localDeviceIp})`;
+    }
+
+    return input.observedPublicIp
+      ? `Saida publica (${input.observedPublicIp})`
+      : "Rede cabeada";
   }
 
   if (
@@ -178,14 +199,26 @@ function resolveObservedNetworkName(input: AccessValidationInput) {
     networkType === "wlan" ||
     networkType === "wireless"
   ) {
-    return input.deviceIp ? `Wi-Fi local (${input.deviceIp})` : "Wi-Fi local";
+    if (input.localDeviceIp) {
+      return `Wi-Fi local (${input.localDeviceIp})`;
+    }
+
+    return input.observedPublicIp
+      ? `Saida publica (${input.observedPublicIp})`
+      : "Wi-Fi local";
   }
 
   if (networkType === "cellular" || networkType === "mobile") {
     return "Rede movel";
   }
 
-  return input.deviceIp ? `Rede local (${input.deviceIp})` : null;
+  if (input.localDeviceIp) {
+    return `LAN local (${input.localDeviceIp})`;
+  }
+
+  return input.observedPublicIp
+    ? `Saida publica (${input.observedPublicIp})`
+    : null;
 }
 
 function evaluatePlantLocationAccess(
@@ -315,9 +348,10 @@ export function evaluatePlantNetworkAccess(
       status: "BLOCKED",
       reason: "cellular",
       message: mobileNetworkEvidence
-        ? `Registro bloqueado em rede movel (${mobileNetworkEvidence}). Conecte-se a rede autorizada da usina.`
-        : "Registro bloqueado em rede movel. Conecte-se a rede autorizada da usina.",
-      observedIp: input.deviceIp ?? null,
+        ? `Registro bloqueado em rede movel (${mobileNetworkEvidence}). Conecte-se ao ambiente de rede autorizado da usina.`
+        : "Registro bloqueado em rede movel. Conecte-se ao ambiente de rede autorizado da usina.",
+      observedPublicIp: input.observedPublicIp ?? null,
+      observedLocalIp: input.localDeviceIp ?? null,
       currentNetworkName,
       matched: false,
       matchedBy: null,
@@ -330,8 +364,9 @@ export function evaluatePlantNetworkAccess(
     return {
       status: "BLOCKED",
       reason: "network",
-      message: "Esta usina exige validacao por Wi-Fi, mas ainda nao possui redes autorizadas ativas cadastradas.",
-      observedIp: input.deviceIp ?? null,
+      message: "Esta usina exige ambiente de rede autorizado, mas ainda nao possui configuracoes ativas cadastradas.",
+      observedPublicIp: input.observedPublicIp ?? null,
+      observedLocalIp: input.localDeviceIp ?? null,
       currentNetworkName,
       matched: false,
       matchedBy: null,
@@ -344,8 +379,9 @@ export function evaluatePlantNetworkAccess(
     return {
       status: "BLOCKED",
       reason: "network",
-      message: "Dispositivo fora da rede Wi-Fi autorizada da usina.",
-      observedIp: input.deviceIp ?? null,
+      message: "Dispositivo fora do ambiente de rede autorizado da usina.",
+      observedPublicIp: input.observedPublicIp ?? null,
+      observedLocalIp: input.localDeviceIp ?? null,
       currentNetworkName,
       matched: false,
       matchedBy: null,
@@ -359,9 +395,10 @@ export function evaluatePlantNetworkAccess(
       status: "OPEN",
       reason: "open",
       message: plant.requireWifiMatch
-        ? "Nenhuma rede autorizada foi cadastrada para esta usina. O acesso segue liberado ate a configuracao ser concluida."
-        : "Esta usina nao exige rede especifica no momento.",
-      observedIp: input.deviceIp ?? null,
+        ? "Nenhum ambiente autorizado foi cadastrado para esta usina."
+        : "Esta usina nao exige ambiente de rede especifico no momento.",
+      observedPublicIp: input.observedPublicIp ?? null,
+      observedLocalIp: input.localDeviceIp ?? null,
       currentNetworkName,
       matched: true,
       matchedBy: null,
@@ -374,8 +411,9 @@ export function evaluatePlantNetworkAccess(
     return {
       status: "OPEN",
       reason: "open",
-      message: "Esta usina nao exige rede especifica no momento.",
-      observedIp: input.deviceIp ?? null,
+      message: "Esta usina nao exige ambiente de rede especifico no momento.",
+      observedPublicIp: input.observedPublicIp ?? null,
+      observedLocalIp: input.localDeviceIp ?? null,
       currentNetworkName,
       matched: false,
       matchedBy: null,
@@ -386,26 +424,33 @@ export function evaluatePlantNetworkAccess(
 
   const browserHintIgnored = mobileNetworkDetected && networkMatched;
   const matchedByLabel =
-    matchedNetwork.matchedBy === "cidr"
-      ? "IP da rede"
-      : matchedNetwork.matchedBy === "ssid"
-        ? "SSID"
-        : matchedNetwork.matchedBy === "bssid"
-          ? "BSSID"
-          : "identificacao da rede";
+    matchedNetwork.matchedBy === "public-ip"
+      ? "rede publica"
+      : matchedNetwork.matchedBy === "local-cidr"
+        ? "LAN local"
+        : matchedNetwork.matchedBy === "ssid"
+          ? "Wi-Fi autorizado"
+          : matchedNetwork.matchedBy === "bssid"
+            ? "BSSID"
+            : "identificacao da rede";
 
   return {
     status: "AUTHORIZED",
     reason: "authorized",
     message:
-      matchedNetwork.matchedBy === "cidr"
+      matchedNetwork.matchedBy === "public-ip"
         ? browserHintIgnored
-          ? `Conexao autorizada pela mesma sub-rede da usina (${matchedNetwork.network.name}). O indicador de rede movel do navegador foi ignorado porque o IP autorizado prevaleceu.`
-          : `Conexao autorizada pela mesma sub-rede da usina (${matchedNetwork.network.name}) por IP da rede.`
-        : browserHintIgnored
-          ? `Conexao autorizada na rede ${matchedNetwork.network.name}. O indicador de rede movel do navegador foi ignorado porque o ${matchedByLabel.toLowerCase()} autorizado prevaleceu.`
-          : `Conexao autorizada na rede ${matchedNetwork.network.name} por ${matchedByLabel}.`,
-    observedIp: input.deviceIp ?? null,
+          ? `Acesso validado pela rede publica da usina (${matchedNetwork.network.name}). O indicador de rede movel do navegador foi ignorado porque o IP publico autorizado prevaleceu.`
+          : `Acesso validado pela rede publica da usina (${matchedNetwork.network.name}).`
+        : matchedNetwork.matchedBy === "local-cidr"
+          ? browserHintIgnored
+            ? `Acesso validado pela LAN local da usina (${matchedNetwork.network.name}). O indicador de rede movel do navegador foi ignorado porque a rede local autorizada prevaleceu.`
+            : `Acesso validado pela LAN local da usina (${matchedNetwork.network.name}).`
+          : browserHintIgnored
+            ? `Acesso validado na rede ${matchedNetwork.network.name}. O indicador de rede movel do navegador foi ignorado porque o ${matchedByLabel.toLowerCase()} prevaleceu.`
+            : `Acesso validado na rede ${matchedNetwork.network.name} por ${matchedByLabel}.`,
+    observedPublicIp: input.observedPublicIp ?? null,
+    observedLocalIp: input.localDeviceIp ?? null,
     currentNetworkName,
     matched: true,
     matchedBy: matchedNetwork.matchedBy,

@@ -711,7 +711,10 @@ paths:
                           bssid:
                             type: string
                             nullable: true
-                          ipv4Cidr:
+                          publicIpv4Cidr:
+                            type: string
+                            nullable: true
+                          localIpv4Cidr:
                             type: string
                             nullable: true
                           notes:
@@ -858,7 +861,10 @@ paths:
                         bssid:
                           type: string
                           nullable: true
-                        ipv4Cidr:
+                        publicIpv4Cidr:
+                          type: string
+                          nullable: true
+                        localIpv4Cidr:
                           type: string
                           nullable: true
                         notes:
@@ -1020,7 +1026,10 @@ paths:
                       bssid:
                         type: string
                         nullable: true
-                      ipv4Cidr:
+                      publicIpv4Cidr:
+                        type: string
+                        nullable: true
+                      localIpv4Cidr:
                         type: string
                         nullable: true
                       notes:
@@ -1036,16 +1045,19 @@ paths:
               schema:
                 type: object
                 properties:
-                  requestIp:
+                  observedPublicIp:
+                    type: string
+                    nullable: true
+                  suggestedPublicIpv4Cidr:
                     type: string
                     nullable: true
                   selectedCandidateId:
                     type: string
                     nullable: true
-                  ipAddress:
+                  localIpAddress:
                     type: string
                     nullable: true
-                  suggestedIpv4Cidr:
+                  localIpv4Cidr:
                     type: string
                     nullable: true
                   interfaceName:
@@ -1063,11 +1075,13 @@ paths:
                   source:
                     type: string
                     nullable: true
+                  confidence:
+                    type: string
                   canAutoReadWifiIdentity:
                     type: boolean
                   notes:
                     type: string
-                  candidates:
+                  localCandidates:
                     type: array
                     items:
                       type: object
@@ -1076,8 +1090,8 @@ paths:
                         - label
                         - connectionKind
                         - interfaceName
-                        - ipAddress
-                        - suggestedIpv4Cidr
+                        - localIpAddress
+                        - localIpv4Cidr
                         - ssid
                         - bssid
                         - source
@@ -1093,10 +1107,10 @@ paths:
                         interfaceName:
                           type: string
                           nullable: true
-                        ipAddress:
+                        localIpAddress:
                           type: string
                           nullable: true
-                        suggestedIpv4Cidr:
+                        localIpv4Cidr:
                           type: string
                           nullable: true
                         ssid:
@@ -1113,18 +1127,20 @@ paths:
                           type: string
                           nullable: true
                 required:
-                  - requestIp
+                  - observedPublicIp
+                  - suggestedPublicIpv4Cidr
                   - selectedCandidateId
-                  - ipAddress
-                  - suggestedIpv4Cidr
+                  - localIpAddress
+                  - localIpv4Cidr
                   - interfaceName
                   - connectionKind
                   - ssid
                   - bssid
                   - source
+                  - confidence
                   - canAutoReadWifiIdentity
                   - notes
-                  - candidates
+                  - localCandidates
         "401":
           description: Success
           content:
@@ -1202,16 +1218,19 @@ paths:
               schema:
                 type: object
                 properties:
-                  requestIp:
+                  observedPublicIp:
+                    type: string
+                    nullable: true
+                  suggestedPublicIpv4Cidr:
                     type: string
                     nullable: true
                   selectedCandidateId:
                     type: string
                     nullable: true
-                  ipAddress:
+                  localIpAddress:
                     type: string
                     nullable: true
-                  suggestedIpv4Cidr:
+                  localIpv4Cidr:
                     type: string
                     nullable: true
                   interfaceName:
@@ -1229,11 +1248,13 @@ paths:
                   source:
                     type: string
                     nullable: true
+                  confidence:
+                    type: string
                   canAutoReadWifiIdentity:
                     type: boolean
                   notes:
                     type: string
-                  candidates:
+                  localCandidates:
                     type: array
                     items:
                       type: object
@@ -1242,8 +1263,8 @@ paths:
                         - label
                         - connectionKind
                         - interfaceName
-                        - ipAddress
-                        - suggestedIpv4Cidr
+                        - localIpAddress
+                        - localIpv4Cidr
                         - ssid
                         - bssid
                         - source
@@ -1259,10 +1280,10 @@ paths:
                         interfaceName:
                           type: string
                           nullable: true
-                        ipAddress:
+                        localIpAddress:
                           type: string
                           nullable: true
-                        suggestedIpv4Cidr:
+                        localIpv4Cidr:
                           type: string
                           nullable: true
                         ssid:
@@ -1279,18 +1300,20 @@ paths:
                           type: string
                           nullable: true
                 required:
-                  - requestIp
+                  - observedPublicIp
+                  - suggestedPublicIpv4Cidr
                   - selectedCandidateId
-                  - ipAddress
-                  - suggestedIpv4Cidr
+                  - localIpAddress
+                  - localIpv4Cidr
                   - interfaceName
                   - connectionKind
                   - ssid
                   - bssid
                   - source
+                  - confidence
                   - canAutoReadWifiIdentity
                   - notes
-                  - candidates
+                  - localCandidates
         "401":
           description: Success
           content:
@@ -1436,7 +1459,10 @@ paths:
                         bssid:
                           type: string
                           nullable: true
-                        ipv4Cidr:
+                        publicIpv4Cidr:
+                          type: string
+                          nullable: true
+                        localIpv4Cidr:
                           type: string
                           nullable: true
                         notes:
@@ -1675,7 +1701,10 @@ paths:
                         bssid:
                           type: string
                           nullable: true
-                        ipv4Cidr:
+                        publicIpv4Cidr:
+                          type: string
+                          nullable: true
+                        localIpv4Cidr:
                           type: string
                           nullable: true
                         notes:
@@ -1829,7 +1858,10 @@ paths:
                       bssid:
                         type: string
                         nullable: true
-                      ipv4Cidr:
+                      publicIpv4Cidr:
+                        type: string
+                        nullable: true
+                      localIpv4Cidr:
                         type: string
                         nullable: true
                       notes:
@@ -2132,7 +2164,10 @@ paths:
                         bssid:
                           type: string
                           nullable: true
-                        ipv4Cidr:
+                        publicIpv4Cidr:
+                          type: string
+                          nullable: true
+                        localIpv4Cidr:
                           type: string
                           nullable: true
                         notes:
@@ -2301,7 +2336,10 @@ paths:
                         bssid:
                           type: string
                           nullable: true
-                        ipv4Cidr:
+                        publicIpv4Cidr:
+                          type: string
+                          nullable: true
+                        localIpv4Cidr:
                           type: string
                           nullable: true
                         notes:
@@ -2470,7 +2508,10 @@ paths:
                         bssid:
                           type: string
                           nullable: true
-                        ipv4Cidr:
+                        publicIpv4Cidr:
+                          type: string
+                          nullable: true
+                        localIpv4Cidr:
                           type: string
                           nullable: true
                         notes:
@@ -3952,7 +3993,8 @@ paths:
                       - status
                       - reason
                       - message
-                      - observedIp
+                      - observedPublicIp
+                      - observedLocalIp
                       - currentNetworkName
                       - matched
                       - matchedBy
@@ -3965,7 +4007,10 @@ paths:
                         type: string
                       message:
                         type: string
-                      observedIp:
+                      observedPublicIp:
+                        type: string
+                        nullable: true
+                      observedLocalIp:
                         type: string
                         nullable: true
                       currentNetworkName:

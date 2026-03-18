@@ -4,31 +4,34 @@ import { httpClient, publicHttpClient } from "./http-client";
 export interface AuthorizedNetwork {
   id?: string;
   name: string;
+  publicIpv4Cidr?: string | null;
+  localIpv4Cidr?: string | null;
   ssid?: string | null;
   bssid?: string | null;
-  ipv4Cidr?: string | null;
   notes?: string | null;
 }
 
 export interface DetectedPlantNetwork {
-  requestIp: string | null;
+  observedPublicIp: string | null;
+  suggestedPublicIpv4Cidr: string | null;
   selectedCandidateId: string | null;
-  ipAddress: string | null;
-  suggestedIpv4Cidr: string | null;
+  localIpAddress: string | null;
+  localIpv4Cidr: string | null;
   interfaceName: string | null;
   connectionKind: string | null;
   ssid: string | null;
   bssid: string | null;
   source: string | null;
+  confidence: "high" | "medium" | "low";
   canAutoReadWifiIdentity: boolean;
   notes: string;
-  candidates: Array<{
+  localCandidates: Array<{
     id: string;
     label: string;
     connectionKind: string;
     interfaceName: string | null;
-    ipAddress: string | null;
-    suggestedIpv4Cidr: string | null;
+    localIpAddress: string | null;
+    localIpv4Cidr: string | null;
     ssid: string | null;
     bssid: string | null;
     source: string;

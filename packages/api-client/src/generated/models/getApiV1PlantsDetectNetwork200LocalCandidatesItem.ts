@@ -6,16 +6,16 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetApiV1PlantsDetectNetwork200CandidatesItem = {
+export type GetApiV1PlantsDetectNetwork200LocalCandidatesItem = {
   id: string;
   label: string;
   connectionKind: string;
   /** @nullable */
   interfaceName: string | null;
   /** @nullable */
-  ipAddress: string | null;
+  localIpAddress: string | null;
   /** @nullable */
-  suggestedIpv4Cidr: string | null;
+  localIpv4Cidr: string | null;
   /** @nullable */
   ssid: string | null;
   /** @nullable */
