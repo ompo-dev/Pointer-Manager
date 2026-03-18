@@ -287,11 +287,11 @@ export function DashboardScreen() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <section className="grid gap-4 xl:grid-cols-[1.45fr_1fr]">
+      <section>
         <Card className="overflow-hidden">
           <CardContent className="grid-paper relative min-h-[280px] p-5 sm:p-8">
             <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/70 to-transparent" />
-            <div className="relative flex h-full flex-col justify-between gap-6">
+            <div className="relative flex h-full flex-col gap-6">
               <div className="space-y-5">
                 <div className="space-y-3">
                   <RealtimeBadge label="Atualizacao em tempo real" />
@@ -320,55 +320,55 @@ export function DashboardScreen() {
                 {currentPlant ? <span>usina: {currentPlant.name}</span> : null}
                 {loadingOverview ? <span>atualizando painel...</span> : null}
               </div>
+
+              <div className="rounded-3xl border border-border/70 bg-background/75 p-4 backdrop-blur sm:p-5">
+                <div className="mb-4 space-y-1">
+                  <h2 className="text-base font-semibold tracking-tight">Feed operacional</h2>
+                  <p className="text-sm text-muted">
+                    Movimentacoes recentes recebidas automaticamente pelo painel.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {timeline.length === 0 ? (
+                    <p className="text-sm text-muted">Nenhum evento novo chegou ainda.</p>
+                  ) : (
+                    timeline.map((event) => {
+                      const eventCopy = describeOperationalEvent(event);
+                      const EventIcon = eventCopy.icon;
+
+                      return (
+                        <div
+                          key={`${event.type}-${event.createdAt}`}
+                          className="rounded-2xl border border-border bg-card/80 p-4"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted/50">
+                                <EventIcon className="size-4 text-muted-foreground" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate font-semibold">{eventCopy.title}</p>
+                                <p className="break-words text-sm text-muted">
+                                  {eventCopy.description}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="shrink-0 font-mono text-xs text-muted">
+                              {new Date(event.createdAt).toLocaleTimeString("pt-BR")}
+                            </span>
+                          </div>
+                          {eventCopy.details ? (
+                            <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                              {eventCopy.details}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Feed operacional</CardTitle>
-            <CardDescription>
-              Movimentacoes recentes recebidas automaticamente pelo painel.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {timeline.length === 0 ? (
-              <p className="text-sm text-muted">Nenhum evento novo chegou ainda.</p>
-            ) : (
-              timeline.map((event) => {
-                const eventCopy = describeOperationalEvent(event);
-                const EventIcon = eventCopy.icon;
-
-                return (
-                  <div
-                    key={`${event.type}-${event.createdAt}`}
-                    className="rounded-2xl border border-border bg-card/70 p-4"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted/50">
-                          <EventIcon className="size-4 text-muted-foreground" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">{eventCopy.title}</p>
-                          <p className="break-words text-sm text-muted">
-                            {eventCopy.description}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="shrink-0 font-mono text-xs text-muted">
-                        {new Date(event.createdAt).toLocaleTimeString("pt-BR")}
-                      </span>
-                    </div>
-                    {eventCopy.details ? (
-                      <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        {eventCopy.details}
-                      </p>
-                    ) : null}
-                  </div>
-                );
-              })
-            )}
           </CardContent>
         </Card>
       </section>
