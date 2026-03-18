@@ -39,6 +39,7 @@ import {
   formatMinutes,
   formatPersonTypeLabel,
 } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PlantEditorPanel } from "@/modules/plants/plant-editor-panel";
 import { emptyPlantForm, usePlantsStore } from "@/store/plants-store";
 
@@ -87,6 +88,7 @@ function buildComparablePlantForm(plant?: PlantDetails | Plant | null) {
 }
 
 export function PlantsScreen() {
+  const isMobile = useIsMobile();
   const [search, setSearch] = useQueryState(
     "search",
     parseAsString.withDefault(""),
@@ -363,6 +365,107 @@ export function PlantsScreen() {
     }
   };
 
+  function renderPresentPeopleSection() {
+    if (!selectedPlant) {
+      return null;
+    }
+
+    if (!isMobile) {
+      return (
+        <DataTable
+          data={selectedPlant.presentPeople}
+          columns={presentColumns}
+          getRowId={(entry) => entry.id}
+          queryStateScope="plantPresentPeople"
+          emptyMessage="Ninguem presente nesta usina."
+          showColumnVisibilityToggle={false}
+        />
+      );
+    }
+
+    if (selectedPlant.presentPeople.length === 0) {
+      return (
+        <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-5 text-sm text-muted-foreground">
+          Ninguem presente nesta usina.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {selectedPlant.presentPeople.map((entry) => (
+          <div
+            key={entry.id}
+            className="space-y-2 rounded-2xl border border-border bg-background p-4"
+          >
+            <div className="space-y-1">
+              <p className="font-semibold">{entry.person.fullName}</p>
+              <p className="text-sm text-muted-foreground">{entry.person.cpf}</p>
+            </div>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p>{formatPersonTypeLabel(entry.person.personType)}</p>
+              <p>Entrada: {formatDateTime(entry.openedAt)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  function renderHistorySection() {
+    if (!selectedPlant) {
+      return null;
+    }
+
+    if (!isMobile) {
+      return (
+        <DataTable
+          data={selectedPlant.history}
+          columns={historyColumns}
+          getRowId={(entry) => entry.id}
+          queryStateScope="plantHistory"
+          emptyMessage="Sem historico recente para esta usina."
+          showColumnVisibilityToggle={false}
+        />
+      );
+    }
+
+    if (selectedPlant.history.length === 0) {
+      return (
+        <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-5 text-sm text-muted-foreground">
+          Sem historico recente para esta usina.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {selectedPlant.history.map((entry) => (
+          <div
+            key={entry.id}
+            className="space-y-3 rounded-2xl border border-border bg-background p-4"
+          >
+            <div className="space-y-1">
+              <p className="font-semibold">{entry.person.fullName}</p>
+              <p className="text-sm text-muted-foreground">
+                Entrada: {formatDateTime(entry.openedAt)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Saida: {formatDateTime(entry.closedAt)}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <TimeEntryStatusBadge status={entry.status} />
+              <span className="text-sm text-muted-foreground">
+                {formatMinutes(entry.totalMinutes ?? 0)}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const plantEditorProps = {
     showSaveAction:
       JSON.stringify(form) !==
@@ -496,11 +599,11 @@ export function PlantsScreen() {
                             {selectedPlant.name}
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="min-w-0 space-y-4">
                           <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-2xl border border-border bg-card p-4">
+                            <div className="min-w-0 rounded-2xl border border-border bg-card p-4">
                               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                                Link publico
+                                Identificador publico
                               </p>
                               <p className="mt-2 break-all font-mono text-sm">
                                 {selectedPlant.id}
@@ -517,14 +620,14 @@ export function PlantsScreen() {
                                 <img
                                   src={qrCodeUrl}
                                   alt={`QRCode da usina ${selectedPlant.name}`}
-                                  className="mt-4 h-40 w-40 rounded-2xl border border-border bg-card p-2"
+                                  className="mt-4 h-40 w-40 max-w-full rounded-2xl border border-border bg-card p-2"
                                 />
                               ) : (
                                 <QrCode className="mt-3 size-5 text-muted-foreground" />
                               )}
                             </div>
 
-                            <div className="rounded-2xl border border-border bg-card p-4">
+                            <div className="min-w-0 rounded-2xl border border-border bg-card p-4">
                               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                                 Horario
                               </p>
@@ -535,7 +638,7 @@ export function PlantsScreen() {
                               </p>
                             </div>
 
-                            <div className="rounded-2xl border border-border bg-card p-4">
+                            <div className="min-w-0 rounded-2xl border border-border bg-card p-4">
                               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                                 Politica
                               </p>
@@ -557,7 +660,7 @@ export function PlantsScreen() {
                               </div>
                             </div>
 
-                            <div className="rounded-2xl border border-border bg-card p-4">
+                            <div className="min-w-0 rounded-2xl border border-border bg-card p-4">
                               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                                 Limites
                               </p>
@@ -569,14 +672,18 @@ export function PlantsScreen() {
                             </div>
                           </div>
 
-                          <div className="rounded-2xl border border-border bg-card p-4">
+                          <div className="min-w-0 rounded-2xl border border-border bg-card p-4">
                             <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                               <Network className="size-4" />
                               Redes autorizadas
                             </p>
                             <div className="mt-3 space-y-2">
-                              {selectedPlant.authorizedNetworks.map(
-                                (network) => (
+                              {selectedPlant.authorizedNetworks.length === 0 ? (
+                                <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-4 text-sm text-muted-foreground">
+                                  Nenhuma rede autorizada salva nesta usina.
+                                </div>
+                              ) : (
+                                selectedPlant.authorizedNetworks.map((network) => (
                                   <div
                                     key={`${network.name}-${network.ssid ?? network.ipv4Cidr ?? "network"}`}
                                     className="rounded-2xl border border-border bg-background px-4 py-3 text-sm"
@@ -598,7 +705,7 @@ export function PlantsScreen() {
                                       </p>
                                     )}
                                   </div>
-                                ),
+                                ))
                               )}
                             </div>
                           </div>
@@ -613,34 +720,20 @@ export function PlantsScreen() {
                             usina.
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-5">
+                        <CardContent className="min-w-0 space-y-5">
                           <div>
-                            <p className="mb-3 inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                              <Building2 className="size-4" />
-                              Presentes agora
-                            </p>
-                            <DataTable
-                              data={selectedPlant.presentPeople}
-                              columns={presentColumns}
-                              getRowId={(entry) => entry.id}
-                              queryStateScope="plantPresentPeople"
-                              emptyMessage="Ninguem presente nesta usina."
-                              showColumnVisibilityToggle={false}
-                            />
+                              <p className="mb-3 inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                                <Building2 className="size-4" />
+                                Presentes agora
+                              </p>
+                            {renderPresentPeopleSection()}
                           </div>
 
                           <div>
                             <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
                               Historico recente
                             </p>
-                            <DataTable
-                              data={selectedPlant.history}
-                              columns={historyColumns}
-                              getRowId={(entry) => entry.id}
-                              queryStateScope="plantHistory"
-                              emptyMessage="Sem historico recente para esta usina."
-                              showColumnVisibilityToggle={false}
-                            />
+                            {renderHistorySection()}
                           </div>
                         </CardContent>
                       </Card>

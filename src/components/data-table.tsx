@@ -309,6 +309,25 @@ function SortableTableHeader<TData extends object, TValue>({
 }: {
   header: Header<TData, TValue>;
 }) {
+  return (
+    <div className="inline-flex w-full items-center gap-2 px-1 py-1">
+      <span className="min-w-0 flex-1">
+        {flexRender(header.column.columnDef.header, header.getContext())}
+      </span>
+      <SortingToggleButton header={header} />
+    </div>
+  );
+}
+
+function SortingToggleButton<TData extends object, TValue>({
+  header,
+  showLabel = false,
+  className,
+}: {
+  header: Header<TData, TValue>;
+  showLabel?: boolean;
+  className?: string;
+}) {
   const sortDirection = header.column.getIsSorted();
   const columnLabel = getColumnVisibilityLabel(header.column);
   const currentStateLabel =
@@ -346,30 +365,107 @@ function SortableTableHeader<TData extends object, TValue>({
         : ArrowUpDownIcon;
 
   return (
-    <div className="inline-flex w-full items-center gap-2 px-1 py-1">
-      <span className="min-w-0 flex-1">
-        {flexRender(header.column.columnDef.header, header.getContext())}
-      </span>
-      <button
-        type="button"
-        aria-label={`Ordenar por ${columnLabel}`}
-        aria-pressed={sortDirection !== false}
-        title={`${columnLabel}: ${currentStateLabel}. Clique para aplicar ${nextStateLabel}.`}
-        className={cn(
-          "inline-flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          sortDirection === "asc"
-            ? "border-emerald-600/30 bg-emerald-500/15 text-emerald-700"
-            : sortDirection === "desc"
-              ? "border-red-600/30 bg-red-500/15 text-red-700"
-              : "border-border/60 bg-background/80 text-muted-foreground hover:border-border hover:bg-muted/60",
-        )}
-        onClick={(event) => {
-          event.stopPropagation();
-          handleSortingToggle();
-        }}
-      >
-        <SortIcon className="size-3.5" />
-      </button>
+    <button
+      type="button"
+      aria-label={`Ordenar por ${columnLabel}`}
+      aria-pressed={sortDirection !== false}
+      title={`${columnLabel}: ${currentStateLabel}. Clique para aplicar ${nextStateLabel}.`}
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center gap-2 rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        showLabel ? "h-9 max-w-full px-3" : "size-8",
+        sortDirection === "asc"
+          ? "border-emerald-600/30 bg-emerald-500/15 text-emerald-700"
+          : sortDirection === "desc"
+            ? "border-red-600/30 bg-red-500/15 text-red-700"
+            : "border-border/60 bg-background/80 text-muted-foreground hover:border-border hover:bg-muted/60",
+        className,
+      )}
+      onClick={(event) => {
+        event.stopPropagation();
+        handleSortingToggle();
+      }}
+    >
+      {showLabel ? (
+        <span className="truncate text-sm font-medium">{columnLabel}</span>
+      ) : null}
+      <SortIcon className="size-3.5" />
+    </button>
+  );
+}
+
+function MobileCardList<TData extends object>({
+  rows,
+  onRowClick,
+  isRowActive,
+  getDetailTitle,
+  renderDetails,
+  renderInlineDetails,
+}: {
+  rows: Row<TData>[];
+  onRowClick?: (row: TData) => void;
+  isRowActive?: (row: TData) => boolean;
+  getDetailTitle?: (row: TData) => React.ReactNode;
+  renderDetails?: (row: TData) => React.ReactNode;
+  renderInlineDetails?: (row: TData) => React.ReactNode;
+}) {
+  const isInteractive = Boolean(onRowClick || renderDetails || renderInlineDetails);
+
+  return (
+    <div className="space-y-3 p-3 sm:p-4">
+      {rows.map((row) => {
+        const visibleCells = row
+          .getVisibleCells()
+          .filter((cell) => !["drag", "select"].includes(cell.column.id));
+        const active = isRowActive?.(row.original) ?? false;
+        const title = getDetailTitle?.(row.original);
+
+        return (
+          <div
+            key={row.id}
+            data-state={row.getIsSelected() && "selected"}
+            className={cn(
+              "rounded-2xl border border-border bg-background p-4 shadow-sm transition-colors",
+              active ? "border-foreground/20 bg-muted/40" : undefined,
+              isInteractive ? "cursor-pointer active:bg-muted/60" : undefined,
+            )}
+            onClick={(event) => {
+              if (!onRowClick || isInteractiveElement(event.target)) {
+                return;
+              }
+
+              onRowClick(row.original);
+            }}
+          >
+            <div className="space-y-4">
+              {title ? (
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 text-sm font-semibold">
+                    {title}
+                  </div>
+                  {isInteractive ? (
+                    <ChevronRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  ) : null}
+                </div>
+              ) : null}
+
+              {visibleCells.map((cell) => {
+                const label = getColumnVisibilityLabel(cell.column);
+
+                return (
+                  <div key={cell.id} className="space-y-1.5">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                      {label}
+                    </p>
+                    <div className="min-w-0 break-words text-sm">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -721,6 +817,9 @@ export function DataTable<TData extends object, TValue = unknown>({
   const rows = enablePagination
     ? table.getRowModel().rows
     : table.getPrePaginationRowModel().rows;
+  const sortableHeaders = table
+    .getFlatHeaders()
+    .filter((header) => !header.isPlaceholder && header.column.getCanSort());
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -760,52 +859,114 @@ export function DataTable<TData extends object, TValue = unknown>({
       ) : null}
 
       <div className="overflow-hidden rounded-lg border bg-card">
-        <DndContext
-          id={sortableId}
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={handleDragEnd}
-          sensors={sensors}
-        >
-          <Table>
-            <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
-                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                        <SortableTableHeader header={header} />
-                      ) : (
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )
-                      )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody className="**:data-[slot=table-cell]:first:align-top">
-              <AnimatePresence initial={false}>
-                {inlinePanel ? (
-                  <InlineDetailsRow
-                    key="inline-panel"
-                    colSpan={enhancedColumns.length}
-                  >
-                    {inlinePanel}
-                  </InlineDetailsRow>
-                ) : null}
-              </AnimatePresence>
-              {rows.length ? (
-                enableRowDrag ? (
-                  <SortableContext
-                    items={dataIds}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {rows.map((row) => (
+        {isMobile ? (
+          <div className="space-y-4">
+            {sortableHeaders.length > 0 ? (
+              <div className="flex flex-wrap gap-2 border-b border-border/60 px-3 py-3">
+                {sortableHeaders.map((header) => (
+                  <SortingToggleButton
+                    key={header.id}
+                    header={header}
+                    showLabel
+                    className="max-w-full"
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            {inlinePanel ? <div className="border-b border-border/60">{inlinePanel}</div> : null}
+
+            {rows.length ? (
+              <MobileCardList
+                rows={rows}
+                onRowClick={
+                  onRowClick || renderDetails || renderInlineDetails
+                    ? handleRowActivate
+                    : undefined
+                }
+                isRowActive={isRowActive}
+                getDetailTitle={getDetailTitle}
+                renderDetails={renderDetails}
+                renderInlineDetails={renderInlineDetails}
+              />
+            ) : (
+              <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+                {emptyMessage}
+              </div>
+            )}
+          </div>
+        ) : (
+          <DndContext
+            id={sortableId}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={handleDragEnd}
+            sensors={sensors}
+          >
+            <Table>
+              <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} colSpan={header.colSpan}>
+                        {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                          <SortableTableHeader header={header} />
+                        ) : (
+                          flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )
+                        )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody className="**:data-[slot=table-cell]:first:align-top">
+                <AnimatePresence initial={false}>
+                  {inlinePanel ? (
+                    <InlineDetailsRow
+                      key="inline-panel"
+                      colSpan={enhancedColumns.length}
+                    >
+                      {inlinePanel}
+                    </InlineDetailsRow>
+                  ) : null}
+                </AnimatePresence>
+                {rows.length ? (
+                  enableRowDrag ? (
+                    <SortableContext
+                      items={dataIds}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {rows.map((row) => (
+                        <React.Fragment key={row.id}>
+                          <SortableTableRow
+                            row={row}
+                            onRowClick={
+                              onRowClick || renderDetails || renderInlineDetails
+                                ? handleRowActivate
+                                : undefined
+                            }
+                            isRowActive={isRowActive}
+                          />
+                          <AnimatePresence initial={false}>
+                            {inlineDetailsRenderer && expandedRowKey === row.id ? (
+                              <InlineDetailsRow
+                                key={`${row.id}-details`}
+                                colSpan={enhancedColumns.length}
+                              >
+                                {inlineDetailsRenderer(row.original)}
+                              </InlineDetailsRow>
+                            ) : null}
+                          </AnimatePresence>
+                        </React.Fragment>
+                      ))}
+                    </SortableContext>
+                  ) : (
+                    rows.map((row) => (
                       <React.Fragment key={row.id}>
-                        <SortableTableRow
+                        <StaticTableRow
                           row={row}
                           onRowClick={
                             onRowClick || renderDetails || renderInlineDetails
@@ -825,46 +986,22 @@ export function DataTable<TData extends object, TValue = unknown>({
                           ) : null}
                         </AnimatePresence>
                       </React.Fragment>
-                    ))}
-                  </SortableContext>
+                    ))
+                  )
                 ) : (
-                  rows.map((row) => (
-                    <React.Fragment key={row.id}>
-                      <StaticTableRow
-                        row={row}
-                        onRowClick={
-                          onRowClick || renderDetails || renderInlineDetails
-                            ? handleRowActivate
-                            : undefined
-                        }
-                        isRowActive={isRowActive}
-                      />
-                      <AnimatePresence initial={false}>
-                        {inlineDetailsRenderer && expandedRowKey === row.id ? (
-                          <InlineDetailsRow
-                            key={`${row.id}-details`}
-                            colSpan={enhancedColumns.length}
-                          >
-                            {inlineDetailsRenderer(row.original)}
-                          </InlineDetailsRow>
-                        ) : null}
-                      </AnimatePresence>
-                    </React.Fragment>
-                  ))
-                )
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={enhancedColumns.length}
-                    className="h-28 text-center text-sm text-muted-foreground"
-                  >
-                    {emptyMessage}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </DndContext>
+                  <TableRow>
+                    <TableCell
+                      colSpan={enhancedColumns.length}
+                      className="h-28 text-center text-sm text-muted-foreground"
+                    >
+                      {emptyMessage}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </DndContext>
+        )}
       </div>
 
       {enablePagination ? (

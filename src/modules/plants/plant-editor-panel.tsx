@@ -227,7 +227,7 @@ export function PlantEditorPanel({
       </div>
 
       <div className="grid gap-3 xl:grid-cols-2">
-        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <Label className="text-sm font-semibold">Exigir rede autorizada</Label>
             <p className="text-sm text-muted-foreground">
@@ -240,7 +240,7 @@ export function PlantEditorPanel({
           />
         </div>
 
-        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <Label className="text-sm font-semibold">Exigir selfie</Label>
             <p className="text-sm text-muted-foreground">
@@ -268,6 +268,7 @@ export function PlantEditorPanel({
             variant="secondary"
             onClick={() => void detectCurrentNetwork({ notify: true })}
             disabled={detectingNetwork}
+            className="w-full sm:w-auto"
           >
             <Wifi className="mr-2 size-4" />
             {detectingNetwork ? "Detectando..." : "Atualizar deteccao"}
@@ -275,20 +276,20 @@ export function PlantEditorPanel({
         </div>
 
         <div className="grid grid-cols-1 gap-4">
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="min-w-0 rounded-2xl border border-border bg-card p-4">
           <div className="flex flex-col gap-3">
             <div className="space-y-1">
               <p className="inline-flex items-center gap-2 text-sm font-semibold">
                 <Router className="size-4" />
                 Interface detectada
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="break-words text-sm text-muted-foreground">
                 Tipo selecionado: {formatConnectionKind(selectedDetectedCandidate?.connectionKind)}
                 {selectedDetectedCandidate?.interfaceName
                   ? ` | ${selectedDetectedCandidate.interfaceName}`
                   : ""}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="break-words text-sm text-muted-foreground">
                 IP: {selectedDetectedCandidate?.ipAddress ?? detectedNetwork?.ipAddress ?? "-"} |
                 CIDR:{" "}
                 {selectedDetectedCandidate?.suggestedIpv4Cidr ??
@@ -296,7 +297,7 @@ export function PlantEditorPanel({
                   "-"}
               </p>
               {selectedDetectedCandidate?.ssid || selectedDetectedCandidate?.bssid ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="break-words text-sm text-muted-foreground">
                   SSID: {selectedDetectedCandidate.ssid ?? "-"} | BSSID:{" "}
                   {selectedDetectedCandidate.bssid ?? "-"}
                 </p>
@@ -310,12 +311,15 @@ export function PlantEditorPanel({
               type="button"
               onClick={applyDetectedNetwork}
               disabled={!selectedDetectedCandidate}
+              className="w-full sm:w-auto"
             >
               Aplicar novamente
             </Button>
           </div>
           {detectedNetwork ? (
-            <p className="mt-3 text-sm text-muted-foreground">{detectedNetwork.notes}</p>
+            <p className="mt-3 break-words text-sm text-muted-foreground">
+              {detectedNetwork.notes}
+            </p>
           ) : null}
           <div className="mt-4">
             <SearchableCombobox
@@ -366,7 +370,7 @@ export function PlantEditorPanel({
           ) : null}
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="min-w-0 rounded-2xl border border-border bg-card p-4">
             <div className="flex flex-col gap-3">
               <div className="space-y-1">
                 <p className="inline-flex items-center gap-2 text-sm font-semibold">
@@ -377,7 +381,7 @@ export function PlantEditorPanel({
                   A geolocalizacao e capturada automaticamente para sugerir o centro da geofence
                   desta usina.
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="break-words text-sm text-muted-foreground">
                   {detectedLocation
                     ? `${detectedLocation.latitude.toFixed(6)}, ${detectedLocation.longitude.toFixed(6)}`
                     : "Localizacao ainda nao capturada"}
@@ -388,7 +392,9 @@ export function PlantEditorPanel({
                   </p>
                 ) : null}
                 {detectedLocation ? (
-                  <p className="text-sm text-muted-foreground">{detectedLocation.notes}</p>
+                  <p className="break-words text-sm text-muted-foreground">
+                    {detectedLocation.notes}
+                  </p>
                 ) : null}
                 {detectedLocation?.distanceMeters !== null &&
                 detectedLocation?.distanceMeters !== undefined ? (
@@ -420,12 +426,13 @@ export function PlantEditorPanel({
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-semibold">Redes autorizadas salvas</p>
             <Button
               type="button"
               variant="outline"
               onClick={() => appendAuthorizedNetwork({ name: "Rede manual" })}
+              className="w-full sm:w-auto"
             >
               <Plus className="mr-2 size-4" />
               Adicionar manualmente
@@ -443,13 +450,14 @@ export function PlantEditorPanel({
                 key={`${network.id ?? "draft"}-${index}`}
                 className="space-y-3 rounded-2xl border border-border bg-background p-4"
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm font-semibold">Rede #{index + 1}</p>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => removeAuthorizedNetwork(index)}
+                    className="w-full sm:w-auto"
                   >
                     <Trash2 className="mr-2 size-4" />
                     Remover

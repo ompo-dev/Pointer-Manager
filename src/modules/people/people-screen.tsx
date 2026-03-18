@@ -42,6 +42,7 @@ import {
   formatMinutes,
   formatPersonTypeLabel,
 } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { emptyPersonForm, usePeopleStore } from "@/store/people-store";
 import { resolveErrorMessage } from "@/store/store-utils";
 
@@ -115,6 +116,7 @@ function buildComparablePersonForm(person?: PersonDetails | Person | null) {
 }
 
 export function PeopleScreen() {
+  const isMobile = useIsMobile();
   const [search, setSearch] = useQueryState(
     "search",
     parseAsString.withDefault(""),
@@ -349,6 +351,60 @@ export function PeopleScreen() {
     } finally {
       setExportingHistory(false);
     }
+  }
+
+  function renderHistorySection() {
+    if (!selectedPerson) {
+      return null;
+    }
+
+    if (!isMobile) {
+      return (
+        <DataTable
+          data={selectedPerson.history}
+          columns={historyColumns}
+          getRowId={(entry) => entry.id}
+          queryStateScope="personHistory"
+          emptyMessage="Ainda sem historico."
+          showColumnVisibilityToggle={false}
+        />
+      );
+    }
+
+    if (selectedPerson.history.length === 0) {
+      return (
+        <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-5 text-sm text-muted-foreground">
+          Ainda sem historico.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {selectedPerson.history.map((entry) => (
+          <div
+            key={entry.id}
+            className="space-y-3 rounded-2xl border border-border bg-background p-4"
+          >
+            <div className="space-y-1">
+              <p className="font-semibold">{entry.plant.name}</p>
+              <p className="text-sm text-muted-foreground">
+                Entrada: {formatDateTime(entry.openedAt)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Saida: {formatDateTime(entry.closedAt)}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <TimeEntryStatusBadge status={entry.status} />
+              <span className="text-sm text-muted-foreground">
+                {formatMinutes(entry.totalMinutes)}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   function renderPersonEditor(mode: "create" | "edit") {
@@ -630,7 +686,7 @@ export function PeopleScreen() {
                             variant="outline"
                             onClick={() => void handleExportHistory()}
                             disabled={exportingHistory}
-                            className="inline-flex items-center gap-2"
+                            className="inline-flex w-full items-center gap-2 sm:w-auto"
                           >
                             <Download className="size-4" />
                             {exportingHistory
@@ -649,14 +705,7 @@ export function PeopleScreen() {
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <DataTable
-                            data={selectedPerson.history}
-                            columns={historyColumns}
-                            getRowId={(entry) => entry.id}
-                            queryStateScope="personHistory"
-                            emptyMessage="Ainda sem historico."
-                            showColumnVisibilityToggle={false}
-                          />
+                          {renderHistorySection()}
                         </CardContent>
                       </Card>
                     </div>
