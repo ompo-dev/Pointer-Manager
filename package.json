@@ -38,7 +38,7 @@
     "start": "node ./scripts/next-start.mjs",
     "build": "node ./scripts/next-build.mjs",
     "typecheck": "node ./node_modules/typescript/lib/tsc.js -p tsconfig.typecheck.json --noEmit",
-    "vercel:build": "node ./scripts/next-build.mjs --with-prisma",
+    "vercel:build": "bun run prisma:migrate:deploy && node ./scripts/next-build.mjs --with-prisma",
     "vercel:dev": "bun run dev",
     "dev:api": "bun --watch apps/api/src/index.ts",
     "build:auth": "bun run --cwd packages/auth build",
@@ -47,6 +47,7 @@
     "typecheck:workspace": "bun run --cwd packages/auth typecheck && bun run --cwd apps/api typecheck && bun run --cwd packages/api-client typecheck",
     "prisma:generate": "bun run --cwd apps/api prisma:generate",
     "prisma:migrate": "bun run --cwd apps/api prisma:migrate",
+    "prisma:migrate:deploy": "bun run --cwd apps/api prisma:migrate:deploy",
     "orval": "bun run --cwd packages/api-client generate",
     "hello": "bun run --cwd scripts hello"
   },
