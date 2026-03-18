@@ -563,6 +563,8 @@ export function PeopleScreen() {
                 ) : null
               }
               expandedRowId={!isCreatingNew ? personId : null}
+              getDetailTitle={(row) => row.fullName}
+              getDetailDescription={(row) => `${formatPersonTypeLabel(row.personType)} | ${row.cpf}`}
               renderInlineDetails={(row) => (
                 <div className="space-y-6 bg-muted/10">
                   {renderPersonEditor("edit")}

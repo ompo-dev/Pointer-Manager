@@ -148,7 +148,12 @@ export async function updatePlant(
   return response.data;
 }
 
-export async function fetchPublicPlant(qrToken: string) {
-  const response = await publicHttpClient.get<Plant>(`/plants/public/${qrToken}`);
+export async function fetchPublicPlant(plantId: string) {
+  const response = await publicHttpClient.get<Plant>(`/plants/public/id/${plantId}`);
+  return response.data;
+}
+
+export async function fetchPublicPlantByToken(qrToken: string) {
+  const response = await publicHttpClient.get<Plant>(`/plants/public/token/${qrToken}`);
   return response.data;
 }

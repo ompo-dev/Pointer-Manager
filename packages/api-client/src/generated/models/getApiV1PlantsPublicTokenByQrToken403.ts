@@ -6,8 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PostApiV1TimeEntriesIntakeBody = {
-  /** @minLength 11 */
-  cpf: string;
-  plantId: string;
+export type GetApiV1PlantsPublicTokenByQrToken403 = {
+  message: string;
 };

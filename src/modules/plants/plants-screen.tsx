@@ -333,7 +333,7 @@ export function PlantsScreen() {
 
   useEffect(() => {
     async function generateQrCode() {
-      if (!selectedPlant?.qrToken) {
+      if (!selectedPlant?.id) {
         setQrCodeUrl("");
         return;
       }
@@ -342,13 +342,13 @@ export function PlantsScreen() {
         typeof window !== "undefined"
           ? window.location.origin
           : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
-      const registerUrl = `${origin}/register?qrToken=${selectedPlant.qrToken}`;
+      const registerUrl = `${origin}/register?plantId=${selectedPlant.id}`;
       const dataUrl = await toDataURL(registerUrl, { margin: 1, width: 180 });
       setQrCodeUrl(dataUrl);
     }
 
     void generateQrCode();
-  }, [selectedPlant?.qrToken]);
+  }, [selectedPlant?.id]);
 
   useEffect(() => {
     void detectCurrentNetwork();
@@ -481,6 +481,8 @@ export function PlantsScreen() {
                 ) : null
               }
               expandedRowId={!isCreatingNew ? plantId : null}
+              getDetailTitle={(row) => row.name}
+              getDetailDescription={(row) => `${row.city} - ${row.state}`}
               renderInlineDetails={(row) => (
                 <div className="space-y-6 bg-muted/10">
                   <PlantEditorPanel mode="edit" {...plantEditorProps} />
@@ -498,13 +500,13 @@ export function PlantsScreen() {
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="rounded-2xl border border-border bg-card p-4">
                               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                                QR token
+                                Link publico
                               </p>
                               <p className="mt-2 break-all font-mono text-sm">
-                                {selectedPlant.qrToken}
+                                {selectedPlant.id}
                               </p>
                               <a
-                                href={`/register?qrToken=${selectedPlant.qrToken}`}
+                                href={`/register?plantId=${selectedPlant.id}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="mt-3 inline-flex text-sm font-semibold underline-offset-4 hover:underline"

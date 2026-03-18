@@ -548,8 +548,8 @@ export class PlantsService {
       },
     });
 
-    if (!plant) {
-      throw new DomainError("QRCode de usina invalido.", 404);
+    if (!plant || plant.status !== "ACTIVE") {
+      throw new DomainError("Usina indisponivel para registros.", 404);
     }
 
     return plant;

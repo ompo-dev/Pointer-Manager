@@ -29,7 +29,7 @@ interface ListEntriesFilters {
 
 interface RegisterEntryInput {
   cpf: string;
-  plantToken?: string | null;
+  plantId?: string | null;
   fullName?: string | null;
   employer?: string | null;
   jobTitle?: string | null;
@@ -52,7 +52,7 @@ interface RegisterEntryInput {
 
 interface RegisterExitInput {
   cpf: string;
-  plantToken?: string | null;
+  plantId?: string | null;
   deviceIp?: string | null;
   wifiSsid?: string | null;
   wifiBssid?: string | null;
@@ -305,13 +305,13 @@ export class TimeEntriesService {
     };
   }
 
-  private async resolvePublicPlant(reference: { plantToken?: string | null }) {
-    if (!reference.plantToken?.trim()) {
-      throw new DomainError("QRCode da usina nao informado.", 422);
+  private async resolvePublicPlant(reference: { plantId?: string | null }) {
+    if (!reference.plantId?.trim()) {
+      throw new DomainError("Usina nao informada para o registro.", 422);
     }
 
     return prisma.plant.findUnique({
-      where: { qrToken: reference.plantToken.trim() },
+      where: { id: reference.plantId.trim() },
       include: {
         authorizedNetworks: true,
       },
@@ -738,7 +738,7 @@ export class TimeEntriesService {
     return entries.map(serializeTimeEntry);
   }
 
-  async getAccessIntakeContext(input: { cpf: string; plantToken?: string | null }) {
+  async getAccessIntakeContext(input: { cpf: string; plantId?: string | null }) {
     const normalizedCpf = normalizeCpf(input.cpf);
 
     if (normalizedCpf.length !== 11) {
@@ -818,7 +818,7 @@ export class TimeEntriesService {
   }
 
   async getPublicNetworkStatus(input: {
-    plantToken?: string | null;
+    plantId?: string | null;
     deviceIp?: string | null;
     wifiSsid?: string | null;
     wifiBssid?: string | null;

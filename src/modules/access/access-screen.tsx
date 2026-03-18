@@ -319,6 +319,8 @@ export function AccessScreen() {
                 ) : null
               }
               expandedRowId={!isCreatingNew ? selectedUserId : null}
+              getDetailTitle={(row) => row.name}
+              getDetailDescription={(row) => row.email}
               renderInlineDetails={(row) => (
                 <div className="space-y-6 bg-muted/10">
                   {renderUserEditor("edit")}

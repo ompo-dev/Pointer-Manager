@@ -2068,6 +2068,344 @@ paths:
           in: path
           name: plantId
           required: true
+  /api/v1/plants/public/id/{plantId}:
+    get:
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  code:
+                    type: string
+                  name:
+                    type: string
+                  city:
+                    type: string
+                  state:
+                    type: string
+                  timezone:
+                    type: string
+                  openingHour:
+                    type: string
+                  closingHour:
+                    type: string
+                  qrToken:
+                    type: string
+                  status:
+                    type: string
+                  requireWifiMatch:
+                    type: boolean
+                  requireSelfie:
+                    type: boolean
+                  autoCloseLimitHours:
+                    type: number
+                  lateAlertMinutes:
+                    type: number
+                  geofenceLatitude:
+                    type: number
+                    nullable: true
+                  geofenceLongitude:
+                    type: number
+                    nullable: true
+                  geofenceRadiusMeters:
+                    type: number
+                    nullable: true
+                  authorizedNetworks:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - name
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        ssid:
+                          type: string
+                          nullable: true
+                        bssid:
+                          type: string
+                          nullable: true
+                        ipv4Cidr:
+                          type: string
+                          nullable: true
+                        notes:
+                          type: string
+                          nullable: true
+                  _count:
+                    type: object
+                    required:
+                      - people
+                      - timeEntries
+                    properties:
+                      people:
+                        type: number
+                      timeEntries:
+                        type: number
+                required:
+                  - id
+                  - code
+                  - name
+                  - city
+                  - state
+                  - timezone
+                  - openingHour
+                  - closingHour
+                  - qrToken
+                  - status
+                  - requireWifiMatch
+                  - requireSelfie
+                  - autoCloseLimitHours
+                  - lateAlertMinutes
+                  - authorizedNetworks
+        "401":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "403":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "404":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "409":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "422":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "500":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+      operationId: getApiV1PlantsPublicIdByPlantId
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: plantId
+          required: true
+  /api/v1/plants/public/token/{qrToken}:
+    get:
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  code:
+                    type: string
+                  name:
+                    type: string
+                  city:
+                    type: string
+                  state:
+                    type: string
+                  timezone:
+                    type: string
+                  openingHour:
+                    type: string
+                  closingHour:
+                    type: string
+                  qrToken:
+                    type: string
+                  status:
+                    type: string
+                  requireWifiMatch:
+                    type: boolean
+                  requireSelfie:
+                    type: boolean
+                  autoCloseLimitHours:
+                    type: number
+                  lateAlertMinutes:
+                    type: number
+                  geofenceLatitude:
+                    type: number
+                    nullable: true
+                  geofenceLongitude:
+                    type: number
+                    nullable: true
+                  geofenceRadiusMeters:
+                    type: number
+                    nullable: true
+                  authorizedNetworks:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - name
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        ssid:
+                          type: string
+                          nullable: true
+                        bssid:
+                          type: string
+                          nullable: true
+                        ipv4Cidr:
+                          type: string
+                          nullable: true
+                        notes:
+                          type: string
+                          nullable: true
+                  _count:
+                    type: object
+                    required:
+                      - people
+                      - timeEntries
+                    properties:
+                      people:
+                        type: number
+                      timeEntries:
+                        type: number
+                required:
+                  - id
+                  - code
+                  - name
+                  - city
+                  - state
+                  - timezone
+                  - openingHour
+                  - closingHour
+                  - qrToken
+                  - status
+                  - requireWifiMatch
+                  - requireSelfie
+                  - autoCloseLimitHours
+                  - lateAlertMinutes
+                  - authorizedNetworks
+        "401":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "403":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "404":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "409":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "422":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+        "500":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+      operationId: getApiV1PlantsPublicTokenByQrToken
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: qrToken
+          required: true
   /api/v1/plants/public/{qrToken}:
     get:
       responses:
@@ -3756,9 +4094,9 @@ paths:
             schema:
               type: object
               required:
-                - plantToken
+                - plantId
               properties:
-                plantToken:
+                plantId:
                   type: string
                 wifiSsid:
                   type: string
@@ -3983,12 +4321,12 @@ paths:
               type: object
               required:
                 - cpf
-                - plantToken
+                - plantId
               properties:
                 cpf:
                   minLength: 11
                   type: string
-                plantToken:
+                plantId:
                   type: string
   /api/v1/time-entries/entry:
     post:
@@ -4188,12 +4526,12 @@ paths:
               type: object
               required:
                 - cpf
-                - plantToken
+                - plantId
               properties:
                 cpf:
                   minLength: 11
                   type: string
-                plantToken:
+                plantId:
                   type: string
                 fullName:
                   type: string
@@ -4446,12 +4784,12 @@ paths:
               type: object
               required:
                 - cpf
-                - plantToken
+                - plantId
               properties:
                 cpf:
                   minLength: 11
                   type: string
-                plantToken:
+                plantId:
                   type: string
                 deviceIp:
                   type: string

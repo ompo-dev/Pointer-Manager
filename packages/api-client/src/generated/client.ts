@@ -26,6 +26,8 @@ import type {
   GetApiV1PlantsByPlantIdPresent200Item,
   GetApiV1PlantsDetectNetwork200,
   GetApiV1PlantsPublicByQrToken200,
+  GetApiV1PlantsPublicIdByPlantId200,
+  GetApiV1PlantsPublicTokenByQrToken200,
   GetApiV1ReportsSummary200,
   GetApiV1TimeEntries200Item,
   GetApiV1TimeEntriesLive200Item,
@@ -181,6 +183,22 @@ const getApiV1PlantsByPlantIdHistory = <TData = AxiosResponse<GetApiV1PlantsByPl
  ): Promise<TData> => {
     return axios.default.get(
       `/api/v1/plants/${plantId}/history`,options
+    );
+  }
+
+const getApiV1PlantsPublicIdByPlantId = <TData = AxiosResponse<GetApiV1PlantsPublicIdByPlantId200>>(
+    plantId: string, options?: AxiosRequestConfig
+ ): Promise<TData> => {
+    return axios.default.get(
+      `/api/v1/plants/public/id/${plantId}`,options
+    );
+  }
+
+const getApiV1PlantsPublicTokenByQrToken = <TData = AxiosResponse<GetApiV1PlantsPublicTokenByQrToken200>>(
+    qrToken: string, options?: AxiosRequestConfig
+ ): Promise<TData> => {
+    return axios.default.get(
+      `/api/v1/plants/public/token/${qrToken}`,options
     );
   }
 
@@ -355,7 +373,7 @@ const getApiV1Audit = <TData = AxiosResponse<GetApiV1Audit200Item[]>>(
     );
   }
 
-return {getApiV1Health,postApiV1AuthLogin,getApiV1AuthMe,getApiV1AccessUsers,postApiV1AccessUsers,patchApiV1AccessUsersByUserId,getApiV1Plants,postApiV1Plants,getApiV1PlantsDetectNetwork,postApiV1PlantsDetectNetwork,getApiV1PlantsByPlantId,patchApiV1PlantsByPlantId,getApiV1PlantsByPlantIdPresent,getApiV1PlantsByPlantIdHistory,getApiV1PlantsPublicByQrToken,getApiV1People,postApiV1People,getApiV1PeopleByPersonId,patchApiV1PeopleByPersonId,getApiV1PeopleByPersonIdHistory,getApiV1PeopleByPersonIdExport,getApiV1ReportsSummary,getApiV1ReportsExport,getApiV1TimeEntries,getApiV1TimeEntriesLive,postApiV1TimeEntriesNetworkStatus,postApiV1TimeEntriesIntake,postApiV1TimeEntriesEntry,postApiV1TimeEntriesExit,postApiV1TimeEntriesByEntryIdClose,postApiV1TimeEntriesByEntryIdAdjust,postApiV1TimeEntriesAutoCloseRun,getApiV1DashboardOverview,getApiV1Audit}};
+return {getApiV1Health,postApiV1AuthLogin,getApiV1AuthMe,getApiV1AccessUsers,postApiV1AccessUsers,patchApiV1AccessUsersByUserId,getApiV1Plants,postApiV1Plants,getApiV1PlantsDetectNetwork,postApiV1PlantsDetectNetwork,getApiV1PlantsByPlantId,patchApiV1PlantsByPlantId,getApiV1PlantsByPlantIdPresent,getApiV1PlantsByPlantIdHistory,getApiV1PlantsPublicIdByPlantId,getApiV1PlantsPublicTokenByQrToken,getApiV1PlantsPublicByQrToken,getApiV1People,postApiV1People,getApiV1PeopleByPersonId,patchApiV1PeopleByPersonId,getApiV1PeopleByPersonIdHistory,getApiV1PeopleByPersonIdExport,getApiV1ReportsSummary,getApiV1ReportsExport,getApiV1TimeEntries,getApiV1TimeEntriesLive,postApiV1TimeEntriesNetworkStatus,postApiV1TimeEntriesIntake,postApiV1TimeEntriesEntry,postApiV1TimeEntriesExit,postApiV1TimeEntriesByEntryIdClose,postApiV1TimeEntriesByEntryIdAdjust,postApiV1TimeEntriesAutoCloseRun,getApiV1DashboardOverview,getApiV1Audit}};
 export type GetApiV1HealthResult = AxiosResponse<GetApiV1Health200>
 export type PostApiV1AuthLoginResult = AxiosResponse<PostApiV1AuthLogin200>
 export type GetApiV1AuthMeResult = AxiosResponse<GetApiV1AuthMe200>
@@ -370,6 +388,8 @@ export type GetApiV1PlantsByPlantIdResult = AxiosResponse<GetApiV1PlantsByPlantI
 export type PatchApiV1PlantsByPlantIdResult = AxiosResponse<PatchApiV1PlantsByPlantId200>
 export type GetApiV1PlantsByPlantIdPresentResult = AxiosResponse<GetApiV1PlantsByPlantIdPresent200Item[]>
 export type GetApiV1PlantsByPlantIdHistoryResult = AxiosResponse<GetApiV1PlantsByPlantIdHistory200Item[]>
+export type GetApiV1PlantsPublicIdByPlantIdResult = AxiosResponse<GetApiV1PlantsPublicIdByPlantId200>
+export type GetApiV1PlantsPublicTokenByQrTokenResult = AxiosResponse<GetApiV1PlantsPublicTokenByQrToken200>
 export type GetApiV1PlantsPublicByQrTokenResult = AxiosResponse<GetApiV1PlantsPublicByQrToken200>
 export type GetApiV1PeopleResult = AxiosResponse<GetApiV1People200Item[]>
 export type PostApiV1PeopleResult = AxiosResponse<PostApiV1People200>

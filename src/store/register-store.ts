@@ -163,9 +163,9 @@ interface RegisterStore {
   locating: boolean;
   checkingCpf: boolean;
   submitting: boolean;
-  loadPlant: (plantToken: string) => Promise<void>;
+  loadPlant: (plantId: string) => Promise<void>;
   refreshNetworkStatus: (
-    plantToken: string,
+    plantId: string,
     options?: { captureLocation?: boolean; notify?: boolean },
   ) => Promise<void>;
   setCpf: (value: string) => void;
@@ -175,9 +175,9 @@ interface RegisterStore {
   clearFeedback: () => void;
   clearReceipt: () => void;
   resetForm: () => void;
-  lookupAccess: (plantToken: string) => Promise<void>;
+  lookupAccess: (plantId: string) => Promise<void>;
   submit: (payload: {
-    plantToken: string;
+    plantId: string;
     deviceLabel: string;
   }) => Promise<void>;
 }
@@ -197,18 +197,18 @@ export const useRegisterStore = create<RegisterStore>((set, get) => ({
   locating: false,
   checkingCpf: false,
   submitting: false,
-  async loadPlant(plantToken) {
+  async loadPlant(plantId) {
     set({ loadingPlant: true, checkingNetwork: true, feedback: null });
 
     try {
-      const plant = await fetchPublicPlant(plantToken);
+      const plant = await fetchPublicPlant(plantId);
       const shouldCaptureLocation = shouldCapturePlantLocation(plant);
       set({ locating: shouldCaptureLocation });
       const environment = await readRegisterEnvironment({
         captureLocation: shouldCaptureLocation,
       });
       const networkStatusResult = await fetchAccessNetworkStatus({
-        plantToken,
+        plantId,
         geoLatitude: environment.location?.latitude,
         geoLongitude: environment.location?.longitude,
         browserIpCandidates: environment.browserIpCandidates,
@@ -237,7 +237,7 @@ export const useRegisterStore = create<RegisterStore>((set, get) => ({
       showErrorToast("Falha ao carregar usina", message);
     }
   },
-  async refreshNetworkStatus(plantToken, options) {
+  async refreshNetworkStatus(plantId, options) {
     const plant = get().plant;
     const shouldCaptureLocation = options?.captureLocation ?? shouldCapturePlantLocation(plant);
 
@@ -259,7 +259,7 @@ export const useRegisterStore = create<RegisterStore>((set, get) => ({
         fallbackLocation: get().location,
       });
       const networkStatus = await fetchAccessNetworkStatus({
-        plantToken,
+        plantId,
         geoLatitude: environment.location?.latitude,
         geoLongitude: environment.location?.longitude,
         browserIpCandidates: environment.browserIpCandidates,
@@ -380,7 +380,7 @@ export const useRegisterStore = create<RegisterStore>((set, get) => ({
       submitting: false,
     }));
   },
-  async lookupAccess(plantToken) {
+  async lookupAccess(plantId) {
     const cpf = digitsOnly(get().form.cpf);
 
     if (cpf.length !== 11) {
@@ -405,7 +405,7 @@ export const useRegisterStore = create<RegisterStore>((set, get) => ({
     try {
       const intake = await fetchAccessIntake({
         cpf,
-        plantToken,
+        plantId,
       });
 
       set((state) => ({
@@ -514,7 +514,7 @@ export const useRegisterStore = create<RegisterStore>((set, get) => ({
       });
       const basePayload = {
         cpf: digitsOnly(form.cpf),
-        plantToken: payload.plantToken,
+        plantId: payload.plantId,
         deviceLabel: payload.deviceLabel,
         selfieUrl: form.selfieUrl || undefined,
         geoLatitude: environment.location?.latitude,

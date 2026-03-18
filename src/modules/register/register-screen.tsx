@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
 import {
   ArrowRightLeft,
@@ -26,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
+import { fetchPublicPlantByToken } from "@/lib/api/plants";
 import {
   showErrorToast,
   showInfoToast,
@@ -36,6 +38,7 @@ import { formatPersonTypeLabel } from "@/lib/utils";
 import { resolveAccessMode } from "@/modules/register/access-intake";
 import { RegisterSuccessCard } from "@/modules/register/register-success-card";
 import { useRegisterStore } from "@/store/register-store";
+import { resolveErrorMessage } from "@/store/store-utils";
 
 function formatCpf(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -58,7 +61,9 @@ function formatDateTime(value?: string | null) {
 }
 
 export function RegisterScreen() {
-  const [plantToken] = useQueryState("qrToken", parseAsString);
+  const router = useRouter();
+  const [plantId] = useQueryState("plantId", parseAsString);
+  const [legacyQrToken] = useQueryState("qrToken", parseAsString);
   const plant = useRegisterStore((state) => state.plant);
   const networkStatus = useRegisterStore((state) => state.networkStatus);
   const locationStatus = useRegisterStore((state) => state.locationStatus);
@@ -85,30 +90,59 @@ export function RegisterScreen() {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const legacyResolutionRef = useRef<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [resolvingLegacyLink, setResolvingLegacyLink] = useState(false);
+  const [legacyLinkError, setLegacyLinkError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!plantToken) {
+    if (plantId || !legacyQrToken || legacyResolutionRef.current === legacyQrToken) {
       return;
     }
 
-    void loadPlant(plantToken);
-  }, [loadPlant, plantToken]);
+    legacyResolutionRef.current = legacyQrToken;
+    setResolvingLegacyLink(true);
+    setLegacyLinkError(null);
+
+    void fetchPublicPlantByToken(legacyQrToken)
+      .then((legacyPlant) => {
+        router.replace(`/register?plantId=${legacyPlant.id}`);
+      })
+      .catch((error) => {
+        const message = resolveErrorMessage(
+          error,
+          "Nao foi possivel converter o link publico antigo da usina.",
+        );
+        setLegacyLinkError(message);
+        showErrorToast("Falha ao abrir QR legado", message);
+      })
+      .finally(() => {
+        setResolvingLegacyLink(false);
+      });
+  }, [legacyQrToken, plantId, router]);
 
   useEffect(() => {
-    if (!plantToken) {
+    if (!plantId) {
+      return;
+    }
+
+    void loadPlant(plantId);
+  }, [loadPlant, plantId]);
+
+  useEffect(() => {
+    if (!plantId) {
       return;
     }
 
     const intervalId = window.setInterval(() => {
-      void refreshNetworkStatus(plantToken, { captureLocation: true });
+      void refreshNetworkStatus(plantId, { captureLocation: true });
     }, 10000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [plantToken, refreshNetworkStatus]);
+  }, [plantId, refreshNetworkStatus]);
 
   const deviceLabel = useMemo(() => {
     if (typeof navigator === "undefined") {
@@ -247,21 +281,29 @@ export function RegisterScreen() {
 
   useEffect(() => () => stopCamera(), []);
 
-  if (!plantToken) {
+  if (!plantId) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-3xl items-start px-4 py-6 sm:px-6 sm:py-10">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Usina nao informada</CardTitle>
+            <CardTitle>
+              {resolvingLegacyLink ? "Convertendo link publico" : "Usina nao informada"}
+            </CardTitle>
             <CardDescription>
-              Abra o QRCode oficial da usina para iniciar o registro.
+              {resolvingLegacyLink
+                ? "Estamos convertendo o QR legado para o identificador publico atual da usina."
+                : "Abra o QRCode oficial da usina para iniciar o registro."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="rounded-2xl border border-amber-300/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-100">
-              O fluxo publico agora usa <code>?qrToken=TOKEN_DA_USINA</code> no
-              endereco.
-            </p>
+            {resolvingLegacyLink ? (
+              <div className="h-24 animate-pulse rounded-3xl bg-muted/50" />
+            ) : (
+              <p className="rounded-2xl border border-amber-300/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-100">
+                O fluxo publico agora usa <code>?plantId=ID_DA_USINA</code> no endereco.
+                {legacyLinkError ? ` ${legacyLinkError}` : ""}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -429,7 +471,7 @@ export function RegisterScreen() {
                     type="button"
                     variant="secondary"
                     onClick={() =>
-                      void refreshNetworkStatus(plantToken, {
+                      void refreshNetworkStatus(plantId, {
                         captureLocation: true,
                         notify: true,
                       })
@@ -494,7 +536,7 @@ export function RegisterScreen() {
                   type="button"
                   className="w-full sm:w-auto"
                   disabled={checkingCpf || loadingPlant}
-                  onClick={() => void lookupAccess(plantToken)}
+                  onClick={() => void lookupAccess(plantId)}
                 >
                   {checkingCpf ? "Consultando..." : "Continuar"}
                 </Button>
@@ -716,7 +758,7 @@ export function RegisterScreen() {
                     type="button"
                     variant="secondary"
                     onClick={() =>
-                      void refreshNetworkStatus(plantToken, {
+                      void refreshNetworkStatus(plantId, {
                         captureLocation: true,
                         notify: true,
                       })
@@ -799,7 +841,7 @@ export function RegisterScreen() {
                     disabled={!canSubmit || submitting}
                     onClick={() =>
                       void submit({
-                        plantToken,
+                        plantId,
                         deviceLabel,
                       })
                     }

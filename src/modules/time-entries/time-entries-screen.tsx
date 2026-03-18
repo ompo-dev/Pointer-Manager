@@ -364,6 +364,8 @@ export function TimeEntriesScreen() {
               }}
               isRowActive={(entry) => entry.id === selectedEntryId}
               expandedRowId={selectedEntryId}
+              getDetailTitle={(row) => row.person.fullName}
+              getDetailDescription={(row) => `${row.plant.name} | ${formatDateTime(row.openedAt)}`}
               renderInlineDetails={(row) =>
                 selectedEntry?.id === row.id ? (
                   <div className="bg-muted/10">{renderEntryDetails()}</div>

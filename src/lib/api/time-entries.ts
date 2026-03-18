@@ -50,7 +50,7 @@ export interface TimeEntryRecord {
 
 export interface AccessPayload {
   cpf: string;
-  plantToken: string;
+  plantId: string;
   fullName?: string;
   employer?: string;
   jobTitle?: string;
@@ -181,7 +181,7 @@ export async function fetchLiveTimeEntries(plantId?: string) {
 
 export async function fetchAccessIntake(payload: {
   cpf: string;
-  plantToken: string;
+  plantId: string;
 }) {
   const response = await publicHttpClient.post<AccessIntakeContext>(
     "/time-entries/intake",
@@ -191,7 +191,7 @@ export async function fetchAccessIntake(payload: {
 }
 
 export async function fetchAccessNetworkStatus(payload: {
-  plantToken: string;
+  plantId: string;
   geoLatitude?: number | null;
   geoLongitude?: number | null;
   browserIpCandidates?: string[];

@@ -6,8 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PostApiV1TimeEntriesIntakeBody = {
-  /** @minLength 11 */
-  cpf: string;
-  plantId: string;
+export type _GetApiV1PlantsPublicIdByPlantId200Count = {
+  people: number;
+  timeEntries: number;
 };

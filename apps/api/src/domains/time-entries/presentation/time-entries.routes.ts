@@ -110,7 +110,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     async ({ body, request, server, set }) => {
       try {
         return await appServices.timeEntries.getPublicNetworkStatus({
-          plantToken: body.plantToken ?? undefined,
+          plantId: body.plantId ?? undefined,
           deviceIp: readClientIp(request.headers, request, server),
           wifiSsid: body.wifiSsid ?? undefined,
           wifiBssid: body.wifiBssid ?? undefined,
@@ -126,7 +126,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     },
     {
       body: t.Object({
-        plantToken: t.String(),
+        plantId: t.String(),
         wifiSsid: t.Optional(t.Union([t.String(), t.Null()])),
         wifiBssid: t.Optional(t.Union([t.String(), t.Null()])),
         geoLatitude: t.Optional(t.Number()),
@@ -147,7 +147,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
       try {
         return await appServices.timeEntries.getAccessIntakeContext({
           cpf: body.cpf,
-          plantToken: body.plantToken ?? undefined,
+          plantId: body.plantId ?? undefined,
         });
       } catch (error) {
         return handleDomainError(set, error);
@@ -156,7 +156,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     {
       body: t.Object({
         cpf: t.String({ minLength: 11 }),
-        plantToken: t.String(),
+        plantId: t.String(),
       }),
       response: {
         200: accessIntakeSchema,
@@ -170,7 +170,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
       try {
         return await appServices.timeEntries.registerEntry({
           cpf: body.cpf,
-          plantToken: body.plantToken ?? undefined,
+          plantId: body.plantId ?? undefined,
           fullName: body.fullName ?? undefined,
           employer: body.employer ?? undefined,
           jobTitle: body.jobTitle ?? undefined,
@@ -197,7 +197,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     {
       body: t.Object({
         cpf: t.String({ minLength: 11 }),
-        plantToken: t.String(),
+        plantId: t.String(),
         fullName: t.Optional(t.Union([t.String(), t.Null()])),
         employer: t.Optional(t.Union([t.String(), t.Null()])),
         jobTitle: t.Optional(t.Union([t.String(), t.Null()])),
@@ -229,7 +229,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
       try {
         return await appServices.timeEntries.registerExit({
           cpf: body.cpf,
-          plantToken: body.plantToken ?? undefined,
+          plantId: body.plantId ?? undefined,
           deviceIp: body.deviceIp ?? readClientIp(request.headers, request, server),
           wifiSsid: body.wifiSsid ?? undefined,
           wifiBssid: body.wifiBssid ?? undefined,
@@ -247,7 +247,7 @@ export const timeEntriesRoutes = new Elysia({ prefix: "/time-entries" })
     {
       body: t.Object({
         cpf: t.String({ minLength: 11 }),
-        plantToken: t.String(),
+        plantId: t.String(),
         deviceIp: t.Optional(t.Union([t.String(), t.Null()])),
         wifiSsid: t.Optional(t.Union([t.String(), t.Null()])),
         wifiBssid: t.Optional(t.Union([t.String(), t.Null()])),

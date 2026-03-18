@@ -9,7 +9,7 @@
 export type PostApiV1TimeEntriesEntryBody = {
   /** @minLength 11 */
   cpf: string;
-  plantToken: string;
+  plantId: string;
   /** @nullable */
   fullName?: string | null;
   /** @nullable */

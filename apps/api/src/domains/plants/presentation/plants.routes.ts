@@ -335,6 +335,38 @@ export const plantsRoutes = new Elysia({ prefix: "/plants" })
     },
   )
   .get(
+    "/public/id/:plantId",
+    async ({ params, set }) => {
+      try {
+        return await appServices.plants.getPublicById(params.plantId);
+      } catch (error) {
+        return handleDomainError(set, error);
+      }
+    },
+    {
+      response: {
+        200: plantSchema,
+        ...commonErrorResponses,
+      },
+    },
+  )
+  .get(
+    "/public/token/:qrToken",
+    async ({ params, set }) => {
+      try {
+        return await appServices.plants.getByQrToken(params.qrToken);
+      } catch (error) {
+        return handleDomainError(set, error);
+      }
+    },
+    {
+      response: {
+        200: plantSchema,
+        ...commonErrorResponses,
+      },
+    },
+  )
+  .get(
     "/public/:qrToken",
     async ({ params, set }) => {
       try {

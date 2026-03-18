@@ -493,6 +493,7 @@ export function DataTable<TData extends object, TValue = unknown>({
   queryStateScope,
   className,
 }: DataTableProps<TData, TValue>) {
+  const isMobile = useIsMobile();
   const sortingQueryKey = queryStateScope ? `${queryStateScope}Sort` : "_tableSort";
   const [sortingQueryParam, setSortingQueryParam] = useQueryState(
     sortingQueryKey,
@@ -666,16 +667,27 @@ export function DataTable<TData extends object, TValue = unknown>({
     expandedRowId !== null && expandedRowId !== undefined
       ? String(expandedRowId)
       : null;
+  const inlineDetailsRenderer = !isMobile ? renderInlineDetails : undefined;
+  const detailRenderer = isMobile
+    ? renderDetails ?? renderInlineDetails
+    : renderDetails;
+  const shouldOpenDetailsPanel = isMobile
+    ? Boolean(detailRenderer)
+    : Boolean(renderDetails && !renderInlineDetails);
 
   const handleRowActivate = React.useCallback(
     (row: TData) => {
-      onRowClick?.(row);
+      const rowIsActive = isRowActive?.(row) ?? false;
 
-      if (renderDetails && !renderInlineDetails) {
+      if (!(isMobile && rowIsActive && shouldOpenDetailsPanel)) {
+        onRowClick?.(row);
+      }
+
+      if (shouldOpenDetailsPanel) {
         setDetailRow(row);
       }
     },
-    [onRowClick, renderDetails, renderInlineDetails],
+    [isMobile, isRowActive, onRowClick, shouldOpenDetailsPanel],
   );
 
   function handleDragEnd(event: DragEndEvent) {
@@ -803,12 +815,12 @@ export function DataTable<TData extends object, TValue = unknown>({
                           isRowActive={isRowActive}
                         />
                         <AnimatePresence initial={false}>
-                          {renderInlineDetails && expandedRowKey === row.id ? (
+                          {inlineDetailsRenderer && expandedRowKey === row.id ? (
                             <InlineDetailsRow
                               key={`${row.id}-details`}
                               colSpan={enhancedColumns.length}
                             >
-                              {renderInlineDetails(row.original)}
+                              {inlineDetailsRenderer(row.original)}
                             </InlineDetailsRow>
                           ) : null}
                         </AnimatePresence>
@@ -828,12 +840,12 @@ export function DataTable<TData extends object, TValue = unknown>({
                         isRowActive={isRowActive}
                       />
                       <AnimatePresence initial={false}>
-                        {renderInlineDetails && expandedRowKey === row.id ? (
+                        {inlineDetailsRenderer && expandedRowKey === row.id ? (
                           <InlineDetailsRow
                             key={`${row.id}-details`}
                             colSpan={enhancedColumns.length}
                           >
-                            {renderInlineDetails(row.original)}
+                            {inlineDetailsRenderer(row.original)}
                           </InlineDetailsRow>
                         ) : null}
                       </AnimatePresence>
@@ -939,7 +951,7 @@ export function DataTable<TData extends object, TValue = unknown>({
             setDetailRow(null);
           }
         }}
-        renderDetails={renderDetails}
+        renderDetails={detailRenderer}
         getDetailTitle={getDetailTitle}
         getDetailDescription={getDetailDescription}
       />

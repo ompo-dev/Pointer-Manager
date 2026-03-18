@@ -9,7 +9,7 @@
 export type PostApiV1TimeEntriesExitBody = {
   /** @minLength 11 */
   cpf: string;
-  plantToken: string;
+  plantId: string;
   /** @nullable */
   deviceIp?: string | null;
   /** @nullable */

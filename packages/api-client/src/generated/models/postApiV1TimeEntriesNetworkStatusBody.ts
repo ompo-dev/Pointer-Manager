@@ -7,7 +7,7 @@
  */
 
 export type PostApiV1TimeEntriesNetworkStatusBody = {
-  plantToken: string;
+  plantId: string;
   /** @nullable */
   wifiSsid?: string | null;
   /** @nullable */

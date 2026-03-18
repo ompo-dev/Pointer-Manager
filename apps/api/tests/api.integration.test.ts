@@ -158,7 +158,7 @@ describe("api integration", () => {
           method: "POST",
           body: {
             cpf: fixture.personCpf,
-            plantToken: fixture.plantToken,
+            plantId: fixture.plantId,
             deviceIp: "10.10.0.12",
             deviceLabel: "Chrome on Android",
             networkEffectiveType: "4g",
@@ -175,7 +175,7 @@ describe("api integration", () => {
           method: "POST",
           body: {
             cpf: fixture.personCpf,
-            plantToken: fixture.plantToken,
+            plantId: fixture.plantId,
             deviceIp: "10.10.0.12",
             wifiSsid: fixture.plantWifiSsid,
             wifiBssid: fixture.plantWifiBssid,
@@ -201,7 +201,7 @@ describe("api integration", () => {
           method: "POST",
           body: {
             cpf: fixture.personCpf,
-            plantToken: fixture.plantToken,
+            plantId: fixture.plantId,
             deviceIp: "10.10.0.12",
             wifiSsid: fixture.plantWifiSsid,
             wifiBssid: fixture.plantWifiBssid,
@@ -253,7 +253,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: `${fixture.personCpf.slice(0, 3)}.${fixture.personCpf.slice(3, 6)}.${fixture.personCpf.slice(6, 9)}-${fixture.personCpf.slice(9)}`,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
@@ -266,7 +266,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: fixture.personCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           deviceIp: "10.10.0.12",
           wifiSsid: fixture.plantWifiSsid,
           wifiBssid: fixture.plantWifiBssid,
@@ -279,7 +279,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: fixture.personCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
@@ -300,7 +300,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: fixture.personCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           deviceIp: ethernetLikeIp,
           networkType: "cellular",
           networkEffectiveType: "4g",
@@ -324,7 +324,7 @@ describe("api integration", () => {
           "x-real-ip": "10.10.0.42",
         },
         body: {
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
@@ -342,7 +342,7 @@ describe("api integration", () => {
         },
         body: {
           cpf: fixture.personCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
@@ -353,14 +353,14 @@ describe("api integration", () => {
     }
   });
 
-  it("requires the qr token on network-status and resolves the environment by token", async () => {
+  it("requires the plant id on network-status and resolves the environment by plant", async () => {
     const fixture = await createFixture();
 
     try {
       const networkStatusResult = await requestJson("/api/v1/time-entries/network-status", {
         method: "POST",
         body: {
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           browserIpCandidates: ["10.10.0.42"],
           networkType: "wifi",
         },
@@ -375,6 +375,25 @@ describe("api integration", () => {
     }
   });
 
+  it("resolves the legacy public token route for QR links antigos", async () => {
+    const fixture = await createFixture();
+
+    try {
+      const publicPlantResult = await requestJson(
+        `/api/v1/plants/public/token/${fixture.plantToken}`,
+        {
+          method: "GET",
+        },
+      );
+
+      expect(publicPlantResult.response.status).toBe(200);
+      expect(publicPlantResult.json.id).toBe(fixture.plantId);
+      expect(publicPlantResult.json.qrToken).toBe(fixture.plantToken);
+    } finally {
+      await cleanupFixture(fixture);
+    }
+  });
+
   it("distinguishes wired and wifi labels but authorizes both when they share the same subnet", async () => {
     const fixture = await createFixture();
 
@@ -382,7 +401,7 @@ describe("api integration", () => {
       const networkStatusResult = await requestJson("/api/v1/time-entries/network-status", {
         method: "POST",
         body: {
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           browserIpCandidates: ["10.10.0.77"],
           networkType: "ethernet",
         },
@@ -418,7 +437,7 @@ describe("api integration", () => {
           "x-real-ip": "10.10.0.42",
         },
         body: {
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
@@ -432,7 +451,7 @@ describe("api integration", () => {
           "x-real-ip": "10.10.0.42",
         },
         body: {
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           geoLatitude: -9.3917,
           geoLongitude: -40.5024,
         },
@@ -453,7 +472,7 @@ describe("api integration", () => {
       const networkStatusResult = await requestJson("/api/v1/time-entries/network-status", {
         method: "POST",
         body: {
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           browserIpCandidates: ["10.10.0.42"],
           networkType: "wifi",
         },
@@ -467,7 +486,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: fixture.personCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           browserIpCandidates: ["10.10.0.42"],
           networkType: "wifi",
         },
@@ -489,7 +508,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: visitorCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
@@ -510,7 +529,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: `${visitorCpf.slice(0, 3)}.${visitorCpf.slice(3, 6)}.${visitorCpf.slice(6, 9)}-${visitorCpf.slice(9)}`,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           fullName: "Visitante Teste",
           personType: "VISITOR",
           jobTitle: "Reuniao com operacao",
@@ -553,7 +572,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: supervisorCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
@@ -571,7 +590,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: supervisorCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
           fullName: "Supervisor Teste",
           personType: "SUPERVISOR",
           deviceIp: "10.10.0.30",
@@ -612,7 +631,7 @@ describe("api integration", () => {
         method: "POST",
         body: {
           cpf: sourceFixture.personCpf,
-          plantToken: targetFixture.plantToken,
+          plantId: targetFixture.plantId,
           personType: "VISITOR",
           jobTitle: "Fornecedor externo",
           deviceIp: "10.10.0.22",
@@ -666,7 +685,7 @@ describe("api integration", () => {
           "x-real-ip": "10.10.0.42",
         },
         body: {
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
@@ -684,7 +703,7 @@ describe("api integration", () => {
         },
         body: {
           cpf: fixture.personCpf,
-          plantToken: fixture.plantToken,
+          plantId: fixture.plantId,
         },
       });
 
