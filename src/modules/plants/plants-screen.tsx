@@ -110,7 +110,7 @@ export function PlantsScreen() {
   );
   const [plantId, setPlantId] = useQueryState("plantId", parseAsString);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [hasSeededInitialSelection, setHasSeededInitialSelection] =
+  const [hasInitializedSelection, setHasInitializedSelection] =
     useState(false);
   const plants = usePlantsStore((state) => state.plants);
   const selectedPlant = usePlantsStore((state) => state.selectedPlant);
@@ -156,8 +156,7 @@ export function PlantsScreen() {
   const [loadingStates, setLoadingStates] = useState(false);
   const [cityOptions, setCityOptions] = useState<SearchableOption[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
-  const activePlantId =
-    !isCreatingNew ? ((plantId ?? panelPlantId) || null) : null;
+  const activePlantId = !isCreatingNew ? (plantId || null) : null;
 
   const selectedDetectedCandidate = useMemo(
     () =>
@@ -274,34 +273,33 @@ export function PlantsScreen() {
   );
 
   useEffect(() => {
-    if (activePlantId || isCreatingNew) {
-      if (!hasSeededInitialSelection) {
-        setHasSeededInitialSelection(true);
-      }
+    if (isCreatingNew || hasInitializedSelection) {
       return;
     }
 
-    if (!hasSeededInitialSelection && plants[0]?.id) {
-      setHasSeededInitialSelection(true);
+    if (plantId) {
+      setHasInitializedSelection(true);
+      return;
+    }
+
+    if (panelPlantId) {
+      setHasInitializedSelection(true);
+      void setPlantId(panelPlantId);
+      return;
+    }
+
+    if (plants[0]?.id) {
+      setHasInitializedSelection(true);
       void setPlantId(plants[0].id);
     }
-  }, [activePlantId, hasSeededInitialSelection, isCreatingNew, plants, setPlantId]);
-
-  useEffect(() => {
-    if (isCreatingNew || plantId || !panelPlantId) {
-      return;
-    }
-
-    void setPlantId(panelPlantId);
-  }, [isCreatingNew, panelPlantId, plantId, setPlantId]);
-
-  useEffect(() => {
-    if (isCreatingNew || !plantId || panelPlantId === plantId) {
-      return;
-    }
-
-    void setPanelPlantId(plantId);
-  }, [isCreatingNew, panelPlantId, plantId, setPanelPlantId]);
+  }, [
+    hasInitializedSelection,
+    isCreatingNew,
+    panelPlantId,
+    plantId,
+    plants,
+    setPlantId,
+  ]);
 
   useEffect(() => {
     void usePlantsStore.getState().loadPlants({ search, status });
@@ -582,7 +580,6 @@ export function PlantsScreen() {
                 if (!isCreatingNew && plant.id === activePlantId) {
                   resetForm();
                   void setPlantId(null);
-                  void setPanelPlantId(null);
                   return;
                 }
 
