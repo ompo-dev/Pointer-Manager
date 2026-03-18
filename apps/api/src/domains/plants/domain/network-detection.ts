@@ -698,19 +698,26 @@ export function detectPlantNetwork(input: DetectPlantNetworkInput): DetectedPlan
   }));
 
   if (!selectedCandidate) {
+    const requestLooksPublic =
+      !!requestIp && !isLoopbackIpv4(requestIp) && !isLocalAreaIpv4(requestIp);
+
     return {
       requestIp,
       selectedCandidateId: null,
-      ipAddress: requestIp,
-      suggestedIpv4Cidr: buildSuggestedIpv4Cidr(requestIp),
+      ipAddress: requestLooksPublic ? null : requestIp,
+      suggestedIpv4Cidr:
+        requestLooksPublic || !isLocalAreaIpv4(requestIp)
+          ? null
+          : buildSuggestedIpv4Cidr(requestIp),
       interfaceName: null,
       connectionKind: null,
       ssid: null,
       bssid: null,
       source: null,
       canAutoReadWifiIdentity: false,
-      notes:
-        "Nao foi possivel identificar automaticamente a rede atual. Verifique se o equipamento possui uma interface IPv4 ativa.",
+      notes: requestLooksPublic
+        ? `A requisicao chegou com IP publico (${requestIp}). O sistema nao conseguiu enxergar um IP local da LAN deste equipamento. Abra o painel pela URL local da maquina ou informe a rede manualmente.`
+        : "Nao foi possivel identificar automaticamente a rede atual. Verifique se o equipamento possui uma interface IPv4 ativa.",
       candidates: resolvedCandidates,
     };
   }
