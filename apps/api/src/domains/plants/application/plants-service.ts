@@ -78,10 +78,10 @@ function buildPlantFilters(organizationId: string, filters?: ListPlantsFilters):
         : undefined,
     OR: filters?.search
       ? [
-          { name: { contains: filters.search, mode: "insensitive" } },
-          { city: { contains: filters.search, mode: "insensitive" } },
-          { state: { contains: filters.search, mode: "insensitive" } },
-          { code: { contains: filters.search, mode: "insensitive" } },
+          { name: { contains: filters.search } },
+          { city: { contains: filters.search } },
+          { state: { contains: filters.search } },
+          { code: { contains: filters.search } },
         ]
       : undefined,
   };

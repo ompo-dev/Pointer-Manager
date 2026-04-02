@@ -61,7 +61,6 @@ function buildPeopleFilters(
               is: {
                 fullName: {
                   contains: filters.search,
-                  mode: "insensitive",
                 },
               },
             },
@@ -71,13 +70,12 @@ function buildPeopleFilters(
               is: {
                 cpf: {
                   contains: filters.search,
-                  mode: "insensitive",
                 },
               },
             },
           },
-          { employer: { contains: filters.search, mode: "insensitive" } },
-          { jobTitle: { contains: filters.search, mode: "insensitive" } },
+          { employer: { contains: filters.search } },
+          { jobTitle: { contains: filters.search } },
         ]
       : undefined,
   };

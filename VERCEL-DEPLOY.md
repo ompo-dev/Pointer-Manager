@@ -21,8 +21,7 @@
 Defina no projeto da Vercel:
 
 - `NODE_ENV=production`
-- `DATABASE_URL=...`
-- `DIRECT_URL=...`
+- `DATABASE_URL=mysql://...` (URL JDBC-style do MySQL; `DIRECT_URL` nao e mais usado pelo Prisma neste projeto)
 - `BETTER_AUTH_URL=https://SEU-PROJETO.vercel.app`
 - `BETTER_AUTH_SECRET=...`
 - `BETTER_AUTH_AUDIENCE=point-manager-api`

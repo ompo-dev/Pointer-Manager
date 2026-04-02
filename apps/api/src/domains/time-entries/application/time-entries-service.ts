@@ -190,7 +190,6 @@ function buildEntrySearchFilters(filters: ListEntriesFilters): Prisma.TimeEntryW
                   is: {
                     fullName: {
                       contains: filters.search,
-                      mode: "insensitive",
                     },
                   },
                 },
@@ -204,7 +203,6 @@ function buildEntrySearchFilters(filters: ListEntriesFilters): Prisma.TimeEntryW
                   is: {
                     cpf: {
                       contains: filters.search,
-                      mode: "insensitive",
                     },
                   },
                 },
@@ -216,7 +214,6 @@ function buildEntrySearchFilters(filters: ListEntriesFilters): Prisma.TimeEntryW
               is: {
                 name: {
                   contains: filters.search,
-                  mode: "insensitive",
                 },
               },
             },

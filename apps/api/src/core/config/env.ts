@@ -7,8 +7,7 @@ const schema = z.object({
   SOCKET_IO_PORT: z.coerce.number().default(4001),
   DATABASE_URL: z
     .string()
-    .default("postgresql://postgres:postgres@localhost:5432/point_manager"),
-  DIRECT_URL: z.string().optional(),
+    .default("mysql://root:root@localhost:3306/point_manager"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   BETTER_AUTH_URL: z.string().url().default("http://localhost:3000"),
   BETTER_AUTH_SECRET: z

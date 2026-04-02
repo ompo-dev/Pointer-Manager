@@ -35,7 +35,7 @@ export const auth = betterAuth({
   secret: authEnv.BETTER_AUTH_SECRET,
   trustedOrigins: getTrustedOrigins(),
   database: prismaAdapter(authPrisma, {
-    provider: "postgresql",
+    provider: "mysql",
   }),
   experimental: {
     joins: true,

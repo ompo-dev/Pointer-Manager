@@ -6,9 +6,17 @@
   "scripts": {
     "hello": "bun run ./src/hello.ts",
     "openapi": "bun run ./src/generate-openapi.ts",
+    "pg-to-mysql": "bun run ./src/migrate-db-data.ts sync",
+    "export-pg-data": "bun run ./src/migrate-db-data.ts export",
+    "import-mysql-data": "bun run ./src/migrate-db-data.ts import",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "mysql2": "^3.15.3",
+    "pg": "^8.14.1"
+  },
   "devDependencies": {
+    "@types/pg": "^8.11.11",
     "@types/node": "^24.3.1",
     "tsx": "^4.20.5",
     "yaml": "^2.8.2"

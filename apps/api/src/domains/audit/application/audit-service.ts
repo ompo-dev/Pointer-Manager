@@ -48,8 +48,8 @@ export class AuditService {
         actorUserId: filters?.actorUserId,
         OR: filters?.search
           ? [
-              { action: { contains: filters.search, mode: "insensitive" } },
-              { entity: { contains: filters.search, mode: "insensitive" } },
+              { action: { contains: filters.search } },
+              { entity: { contains: filters.search } },
             ]
           : undefined,
       },

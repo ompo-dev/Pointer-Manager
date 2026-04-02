@@ -4,7 +4,7 @@
 
 - Frontend: Next.js App Router in `apps/web`
 - Backend: Elysia in `apps/api`
-- Persistence: Prisma + PostgreSQL
+- Persistence: Prisma + MySQL
 - Contracts: OpenAPI in `packages/contracts/openapi`
 - Client generation: Orval in `packages/api-client`
 - Runtime package manager: Bun workspaces

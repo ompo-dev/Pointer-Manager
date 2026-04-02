@@ -49,7 +49,10 @@
     "prisma:migrate": "bun run --cwd apps/api prisma:migrate",
     "prisma:migrate:deploy": "bun run --cwd apps/api prisma:migrate:deploy",
     "orval": "bun run --cwd packages/api-client generate",
-    "hello": "bun run --cwd scripts hello"
+    "hello": "bun run --cwd scripts hello",
+    "migrate:pg-to-mysql": "bun run --cwd scripts pg-to-mysql",
+    "migrate:export-pg": "bun run --cwd scripts export-pg-data",
+    "migrate:import-mysql": "bun run --cwd scripts import-mysql-data"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.5.5",

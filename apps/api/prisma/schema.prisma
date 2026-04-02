@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -122,7 +121,7 @@ model User {
   name            String
   email           String       @unique
   emailVerified   Boolean      @default(true)
-  image           String?
+  image           String? @db.Text
   passwordHash    String?
   role            UserRole
   status          UserStatus   @default(ACTIVE)
@@ -156,9 +155,9 @@ model Account {
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountId             String
   providerId            String
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
+  accessToken           String? @db.Text
+  refreshToken          String? @db.Text
+  idToken               String? @db.Text
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
@@ -183,8 +182,8 @@ model Verification {
 
 model Jwks {
   id         String   @id
-  publicKey  String
-  privateKey String
+  publicKey  String   @db.LongText
+  privateKey String   @db.LongText
   createdAt  DateTime @default(now())
   expiresAt  DateTime?
 }
